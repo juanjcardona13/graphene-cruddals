@@ -127,27 +127,6 @@ INTERFACES_NAME_CRUDDALS = CLASS_INTERFACE_FIELDS_NAMES + CLASS_INTERFACE_TYPE_N
 
 
 class CruddalsInterfaceNames(Enum):
-    """
-    An enumeration class that defines the names of the interfaces for CRUDDALS operations
-    and object types in the Cruddals system.
-
-    Attributes:
-    - CREATE_FIELD: The name of the interface for creating a field.
-    - READ_FIELD: The name of the interface for reading a field.
-    - UPDATE_FIELD: The name of the interface for updating a field.
-    - DELETE_FIELD: The name of the interface for deleting a field.
-    - DEACTIVATE_FIELD: The name of the interface for deactivating a field.
-    - ACTIVATE_FIELD: The name of the interface for activating a field.
-    - LIST_FIELD: The name of the interface for listing fields.
-    - SEARCH_FIELD: The name of the interface for searching fields.
-    - OBJECT_TYPE: The name of the interface for object types.
-    - INPUT_OBJECT_TYPE: The name of the interface for input object types.
-    - CREATE_INPUT_OBJECT_TYPE: The name of the interface for creating input object types.
-    - UPDATE_INPUT_OBJECT_TYPE: The name of the interface for updating input object types.
-    - FILTER_INPUT_OBJECT_TYPE: The name of the interface for filtering input object types.
-    - ORDER_BY_INPUT_OBJECT_TYPE: The name of the interface for ordering by input object types.
-    """
-
     CREATE_FIELD = "CreateField"
     READ_FIELD = "ReadField"
     UPDATE_FIELD = "UpdateField"

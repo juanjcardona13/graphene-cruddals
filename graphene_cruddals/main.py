@@ -14,15 +14,7 @@ from registry.registry_global import RegistryGlobal, get_global_registry
 from utils.main import delete_keys, get_name_of_model_in_different_case, get_schema_query_mutation, merge_dict, validate_list_func_cruddals
 
 
-""" 
-Cuándo usar:
-    Método de Instancia (self):
-        Cuando necesitas acceder a los datos de una instancia específica de la clase.
-        Cuando los métodos operan en los atributos de la instancia.
-    Método de Clase (cls):
-        Cuando necesitas operar con la clase en lugar de con una instancia específica.
-        Cuando necesitas crear una nueva instancia basada en algún tipo de entrada que no sea una instancia de la clase. 
-"""
+
 
 @dataclass
 class CruddalsBuilderConfig:
@@ -742,9 +734,6 @@ class CruddalsModel(SubclassWithMeta):
 
     @classmethod
     def _initialize_attributes(cls):
-        """
-        Initialize attributes to None for the child class.
-        """
         attrs_for_child = [
             "Query",
             "Mutation",
@@ -757,29 +746,11 @@ class CruddalsModel(SubclassWithMeta):
 
     @classmethod
     def _build_cruddals_model( cls, config ):
-        """
-        Build the CruddalsModel using BuilderCruddalsModel.
-
-        Args:
-            model (Model): The  model for which the schema is to be generated.
-            prefix (str): Prefix for the model's schema.
-            suffix (str): Suffix for the model's schema.
-            interfaces (Tuple[InterfaceStructure, ...]): Additional GraphQL interfaces to include in the schema.
-            exclude_interfaces (Tuple[str, ...]): Interfaces to exclude from the schema.
-            registry (Union[RegistryGlobal, None]): The registry to use for schema registration.
-        """
         cruddals_of_model = BuilderCruddalsModel( config )
         cls.meta = cruddals_of_model
 
     @classmethod
     def _build_dict_for_operation_fields(cls, functions, exclude_functions):
-        """
-        Build dictionaries for query and mutation operation fields based on the given functions and exclude_functions..
-
-        Args:
-            functions (Tuple[FunctionType, ...]): Functions to include in the schema.
-            exclude_functions (Tuple[FunctionType, ...]): Functions to exclude from the schema.
-        """
         functions_type_query = ("read", "list", "search")
         functions_type_mutation = ( "create", "update", "activate", "deactivate", "delete", )
         final_functions = ( functions if functions else tuple( set(functions_type_query + functions_type_mutation) - set(exclude_functions) ) )
@@ -806,9 +777,6 @@ class CruddalsModel(SubclassWithMeta):
 
     @classmethod
     def _build_schema_query_mutation(cls):
-        """
-        Build the schema, Query, and Mutation objects.
-        """
         cls.schema, cls.Query, cls.Mutation = get_schema_query_mutation(
             (), cls.operation_fields_for_queries, (), cls.operation_fields_for_mutations
         )

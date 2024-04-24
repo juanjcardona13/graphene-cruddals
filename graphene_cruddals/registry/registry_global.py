@@ -3,36 +3,6 @@ from utils.typing.custom_typing import TypeRegistryForField, TypeRegistryForMode
 
 
 class RegistryGlobal:
-    """
-    Registry all necessary for convert your ORM Django to valid API GraphQL
-    Example Complete:
-
-    model_registry = {
-        "ClassMyModel": {
-            "object_type": ClassMyModelObjectType,
-            "paginated_object_type": ClassMyModelObjectType,
-            "input_object_type": ClassMyModelInputObjectType,
-            "input_object_type_for_create": ClassMyModelCreateInputObjectType,
-            "input_object_type_for_update": ClassMyModelUpdateInputObjectType,
-            "input_object_type_for_search": ClassMyModelFilterInputObjectType,
-            "input_object_type_for_order_by": ClassMyModelOrderInputObjectType,
-            "input_object_type_for_connect": ClassMyModelConnectInputObjectType,
-            "input_object_type_for_connect_disconnect": ClassMyModelConnectDisconnectInputObjectType,
-            "cruddals": ClassMyModelCRUDDALS,
-        }
-    }
-
-    field_registry = {
-        "FIELD": {
-            "output": Field,
-            "input_for_create_update": CreateUpdateInputField,
-            "input_for_create": CreateInputField,
-            "input_for_update": UpdateInputField,
-            "input_for_search": FilterInputField,
-            "input_for_order_by": OrderByInputField,
-        }
-    }
-    """
 
     def __init__(self):
         self._model_registry = {}
