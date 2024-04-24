@@ -2,8 +2,8 @@ import re
 import graphene
 from typing import Any, OrderedDict, Dict, Literal, Tuple, Type, Union
 from collections.abc import Iterable
-from cruddals.utils.typing.custom_typing import FunctionType, NameCaseType, RootFieldsType, TypeRegistryForModel
-from cruddals.registry.registry_global import RegistryGlobal
+from graphene_cruddals.utils.typing.custom_typing import FunctionType, NameCaseType, RootFieldsType, TypeRegistryForModel
+from graphene_cruddals.registry.registry_global import RegistryGlobal
 
 class Promise:
     """

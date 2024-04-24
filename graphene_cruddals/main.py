@@ -8,11 +8,11 @@ from graphene.utils.subclass_with_meta import SubclassWithMeta
 from graphene.utils.props import props as graphene_get_props
 from graphene.utils.str_converters import to_snake_case
 
-from cruddals.converters.main import convert_model_to_filter_input_object_type, convert_model_to_mutate_input_object_type, convert_model_to_object_type, convert_model_to_order_by_input_object_type, convert_model_to_paginated_object_type
-from cruddals.utils.typing.custom_typing import GRAPHENE_TYPE, FunctionType, ModifyArgument, NameCaseType, TypesMutationEnum, CruddalsInterfaceNames, MetaCruddalsInterfaceNames, INTERFACES_NAME_CRUDDALS, CLASS_INTERFACE_FIELDS_NAMES, CLASS_INTERFACE_TYPE_NAMES, TypeRegistryForModelEnum
-from cruddals.operation_fields.main import ActivateField, CreateUpdateField, DeactivateField, DeleteField, ListField, ReadField, SearchField
-from cruddals.registry.registry_global import RegistryGlobal, get_global_registry
-from cruddals.utils.main import delete_keys, get_name_of_model_in_different_case, get_schema_query_mutation, merge_dict, validate_list_func_cruddals
+from graphene_cruddals.converters.main import convert_model_to_filter_input_object_type, convert_model_to_mutate_input_object_type, convert_model_to_object_type, convert_model_to_order_by_input_object_type, convert_model_to_paginated_object_type
+from graphene_cruddals.utils.typing.custom_typing import GRAPHENE_TYPE, FunctionType, ModifyArgument, NameCaseType, TypesMutationEnum, CruddalsInterfaceNames, MetaCruddalsInterfaceNames, INTERFACES_NAME_CRUDDALS, CLASS_INTERFACE_FIELDS_NAMES, CLASS_INTERFACE_TYPE_NAMES, TypeRegistryForModelEnum
+from graphene_cruddals.operation_fields.main import ActivateField, CreateUpdateField, DeactivateField, DeleteField, ListField, ReadField, SearchField
+from graphene_cruddals.registry.registry_global import RegistryGlobal, get_global_registry
+from graphene_cruddals.utils.main import delete_keys, get_name_of_model_in_different_case, get_schema_query_mutation, merge_dict, validate_list_func_cruddals
 
 
 """ 
@@ -774,7 +774,7 @@ class CruddalsModel(SubclassWithMeta):
         cls._build_cruddals_model( config )
         cls._build_dict_for_operation_fields(functions, exclude_functions)
         cls._build_schema_query_mutation()
-        config.registry.register_model(config.model, TypeRegistryForModelEnum.CRUDDALS.value, cls)
+        config.registry.register_model(config.model, TypeRegistryForModelEnum.graphene_cruddals.value, cls)
 
         super().__init_subclass_with_meta__(**kwargs)
 

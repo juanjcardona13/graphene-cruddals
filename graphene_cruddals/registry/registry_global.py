@@ -1,6 +1,6 @@
 from enum import Enum
 from typing import Any, Hashable, Union
-from cruddals.utils.typing.custom_typing import TypeRegistryForField, TypeRegistryForModel
+from graphene_cruddals.utils.typing.custom_typing import TypeRegistryForField, TypeRegistryForModel
 
 
 class RegistryGlobal:

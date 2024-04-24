@@ -1,8 +1,8 @@
 import graphene
 from typing import Literal, Type
 from collections import OrderedDict
-from cruddals.utils.error_handling.error_types import ErrorCollectionType
-from cruddals.utils.main import build_class
+from graphene_cruddals.utils.error_handling.error_types import ErrorCollectionType
+from graphene_cruddals.utils.main import build_class
 
 
 def get_object_type_payload( model_object_type: Type[graphene.ObjectType], name_for_output_type:str, plural_model_name:str, include_success=False ):

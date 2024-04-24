@@ -1,9 +1,9 @@
 import graphene
 from typing import Any, Dict, Literal, OrderedDict, Type, Callable, List, Union, Any, Callable
-from cruddals.operation_fields.main import ListField
-from cruddals.utils.main import build_class, exists_conversion_for_model, get_converted_model
-from cruddals.utils.typing.custom_typing import GRAPHENE_TYPE, MetaAttrs, TypesMutation, TypesMutationEnum, TypeRegistryForModelEnum
-from cruddals.registry.registry_global import RegistryGlobal, get_global_registry
+from graphene_cruddals.operation_fields.main import ListField
+from graphene_cruddals.utils.main import build_class, exists_conversion_for_model, get_converted_model
+from graphene_cruddals.utils.typing.custom_typing import GRAPHENE_TYPE, MetaAttrs, TypesMutation, TypesMutationEnum, TypeRegistryForModelEnum
+from graphene_cruddals.registry.registry_global import RegistryGlobal, get_global_registry
 
 
 class PaginationInterface(graphene.Interface):
