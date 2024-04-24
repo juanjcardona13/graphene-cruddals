@@ -1,5 +1,5 @@
 import graphene
-from graphene_cruddals.utils.main import camelize
+from utils.main import camelize
 
 class ErrorType(graphene.ObjectType):
     field = graphene.String(required=True)

@@ -1,13 +1,13 @@
 import graphene
-from typing import Literal, Type
+from typing import Dict, Literal, Type, Union
 from collections import OrderedDict
-from graphene_cruddals.utils.error_handling.error_types import ErrorCollectionType
-from graphene_cruddals.utils.main import build_class
+from utils.error_handling.error_types import ErrorCollectionType
+from utils.main import build_class
 
 
 def get_object_type_payload( model_object_type: Type[graphene.ObjectType], name_for_output_type:str, plural_model_name:str, include_success=False ):
 
-    output_fields = OrderedDict(
+    output_fields:Dict[str, Union[ListField, graphene.List, graphene.Boolean]] = OrderedDict(
         {
             "objects": ListField(model_object_type, "objects"), # TODa: If I want that the name of the field is the plural_model_name, I need to change the name of the field to plural_model_name, Missing check impact
             "errors_report": graphene.List(ErrorCollectionType),

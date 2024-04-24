@@ -1,6 +1,5 @@
-from enum import Enum
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, OrderedDict, Tuple, Type, Union
+from typing import Any, Callable, Dict, Optional, OrderedDict, Tuple, Type, Union
 
 import graphene
 from graphene.types.generic import GenericScalar
@@ -8,11 +7,11 @@ from graphene.utils.subclass_with_meta import SubclassWithMeta
 from graphene.utils.props import props as graphene_get_props
 from graphene.utils.str_converters import to_snake_case
 
-from graphene_cruddals.converters.main import convert_model_to_filter_input_object_type, convert_model_to_mutate_input_object_type, convert_model_to_object_type, convert_model_to_order_by_input_object_type, convert_model_to_paginated_object_type
-from graphene_cruddals.utils.typing.custom_typing import GRAPHENE_TYPE, FunctionType, ModifyArgument, NameCaseType, TypesMutationEnum, CruddalsInterfaceNames, MetaCruddalsInterfaceNames, INTERFACES_NAME_CRUDDALS, CLASS_INTERFACE_FIELDS_NAMES, CLASS_INTERFACE_TYPE_NAMES, TypeRegistryForModelEnum
-from graphene_cruddals.operation_fields.main import ActivateField, CreateUpdateField, DeactivateField, DeleteField, ListField, ReadField, SearchField
-from graphene_cruddals.registry.registry_global import RegistryGlobal, get_global_registry
-from graphene_cruddals.utils.main import delete_keys, get_name_of_model_in_different_case, get_schema_query_mutation, merge_dict, validate_list_func_cruddals
+from converters.main import convert_model_to_filter_input_object_type, convert_model_to_mutate_input_object_type, convert_model_to_object_type, convert_model_to_order_by_input_object_type, convert_model_to_paginated_object_type
+from utils.typing.custom_typing import GRAPHENE_TYPE, FunctionType, ModifyArgument, NameCaseType, TypesMutationEnum, CruddalsInterfaceNames, MetaCruddalsInterfaceNames, INTERFACES_NAME_CRUDDALS, CLASS_INTERFACE_FIELDS_NAMES, CLASS_INTERFACE_TYPE_NAMES, TypeRegistryForModelEnum
+from operation_fields.main import ActivateField, CreateUpdateField, DeactivateField, DeleteField, ListField, ReadField, SearchField
+from registry.registry_global import RegistryGlobal, get_global_registry
+from utils.main import delete_keys, get_name_of_model_in_different_case, get_schema_query_mutation, merge_dict, validate_list_func_cruddals
 
 
 """ 
@@ -64,39 +63,6 @@ class CruddalsBuilderConfig:
 
 
 class BaseCruddals:
-    """
-    A base class providing common methods for building resolvers and managing interfaces.
-
-    Attributes:
-        model_as_object_type: The GraphQL object type for the model.
-        model_as_paginated_object_type: The GraphQL paginated object type for the model.
-        model_as_input_object_type: The GraphQL input object type for the model.
-        model_as_create_input_object_type: The GraphQL input object type for create operations.
-        model_as_update_input_object_type: The GraphQL input object type for update operations.
-        model_as_filter_input_object_type: The GraphQL input object type for filtering operations.
-        model_as_order_by_input_object_type: The GraphQL input object type for ordering operations.
-
-        read_field: The read field (or also called operation) for the model.
-        list_field: The list field (or also called operation) for the model.
-        search_field: The search field (or also called operation) for the model.
-        create_field: The create field (or also called operation) for the model.
-        update_field: The update field (or also called operation) for the model.
-        activate_field: The activate field (or also called operation) for the model.
-        deactivate_field: The deactivate field (or also called operation) for the model.
-        delete_field: The delete field (or also called operation) for the model.
-
-    Methods:
-        wrap_resolver_with_pre_post_resolvers: Wrap resolver with pre and post resolvers.
-        wrap_resolver_with_pre_post_resolvers: Get the resolver for an operation field.
-        get_interface_attrs: Get attributes for an interface.
-        get_interface_meta_attrs: Get meta attributes for an interface.
-        validate_attrs: Validate attributes for a function.
-        get_function_lists: Get lists of functions.
-        get_last_element: Get the last element from a list or a default value.
-        save_pre_post_how_list: Save pre and post functions as lists.
-        get_pre_and_post_resolves: Get pre and post resolves.
-
-    """
     model: Dict[str, Any]
     prefix: str = ""
     suffix: str = ""
@@ -122,11 +88,10 @@ class BaseCruddals:
     list_field: Union[ListField, None] = None
     search_field: Union[SearchField, None] = None
 
-    @classmethod
-    def get_where_arg(cls, modify_where_argument:Union[ModifyArgument, Dict, None]=None, default_required=False ):
+    def get_where_arg(self, modify_where_argument:Union[ModifyArgument, Dict, None]=None, default_required=False ):
         modify_where_argument = modify_where_argument or {}
         default_values_for_where = {
-            "type_": cls.model_as_filter_input_object_type,
+            "type_": self.model_as_filter_input_object_type,
             "name": "where",
             "required": default_required,
             "description": "",
@@ -137,11 +102,10 @@ class BaseCruddals:
         return {"where": graphene.Argument(default_values_for_where.pop("type_"), **default_values_for_where)}
 
 
-    @classmethod
-    def get_input_arg(cls, modify_input_argument:Union[ModifyArgument, Dict, None]=None):
+    def get_input_arg(self, modify_input_argument:Union[ModifyArgument, Dict, None]=None):
         modify_input_argument = modify_input_argument or {}
         default_values_for_input = {
-            "type_": graphene.List(graphene.NonNull(cls.model_as_input_object_type)),
+            "type_": graphene.List(graphene.NonNull(self.model_as_input_object_type)),
             "name": "input",
             "required": False,
             "description": "",
@@ -152,11 +116,10 @@ class BaseCruddals:
         return {"input": graphene.Argument(default_values_for_input.pop("type_"), **default_values_for_input)}
     
 
-    @classmethod
-    def get_order_by_arg(cls, modify_order_by_argument:Union[ModifyArgument, Dict, None]=None):
+    def get_order_by_arg(self, modify_order_by_argument:Union[ModifyArgument, Dict, None]=None):
         modify_order_by_argument = modify_order_by_argument or {}
         default_values_for_order_by = {
-            "type_": cls.model_as_order_by_input_object_type,
+            "type_": self.model_as_order_by_input_object_type,
             "name": "orderBy",
             "required": False,
             "description": "",
@@ -167,8 +130,7 @@ class BaseCruddals:
         return {"order_by": graphene.Argument(default_values_for_order_by.pop("type_"), **default_values_for_order_by)}
 
 
-    @classmethod
-    def get_pagination_config_arg(cls, modify_pagination_config_argument:Union[ModifyArgument, Dict, None]=None):
+    def get_pagination_config_arg(self, modify_pagination_config_argument:Union[ModifyArgument, Dict, None]=None):
         modify_pagination_config_argument = modify_pagination_config_argument or {}
         default_values_for_pagination_config = {
             "type_": PaginationConfigInput,
@@ -595,87 +557,87 @@ class BuilderCruddalsModel( CreateBuilder, ReadBuilder, UpdateBuilder, DeleteBui
         )
         setattr(self, "search_field", search_operation_field)
 
-    @classmethod
-    def _get_model_object_type(cls, dict_of_interface_attr) -> Type[graphene.ObjectType]:
+
+    def _get_model_object_type(self, dict_of_interface_attr) -> Type[graphene.ObjectType]:
         return convert_model_to_object_type(
-            model=cls.model,
-            pascal_case_name=cls.model_name_in_different_case["pascal_case"],
-            registry=cls.registry,
-            field_converter_function=cls.cruddals_config.output_field_converter_function,
+            model=self.model,
+            pascal_case_name=self.model_name_in_different_case["pascal_case"],
+            registry=self.registry,
+            field_converter_function=self.cruddals_config.output_field_converter_function,
             meta_attrs=dict_of_interface_attr.pop(MetaCruddalsInterfaceNames.META_OBJECT_TYPE.value, None),
             extra_fields=dict_of_interface_attr.pop(CruddalsInterfaceNames.OBJECT_TYPE.value, None),
         )
 
-    @classmethod
-    def _get_model_paginated_object_type(cls) -> Type[graphene.ObjectType]:
+
+    def _get_model_paginated_object_type(self) -> Type[graphene.ObjectType]:
         return convert_model_to_paginated_object_type(
-            model=cls.model,
-            pascal_case_name=cls.model_name_in_different_case["pascal_case"],
-            registry=cls.registry,
-            model_object_type=cls.model_as_object_type,
+            model=self.model,
+            pascal_case_name=self.model_name_in_different_case["pascal_case"],
+            registry=self.registry,
+            model_object_type=self.model_as_object_type,
             extra_fields=None,
         )
 
-    @classmethod
-    def _get_model_input_object_type(cls, dict_of_interface_attr) -> Type[graphene.InputObjectType]:
+
+    def _get_model_input_object_type(self, dict_of_interface_attr) -> Type[graphene.InputObjectType]:
         return convert_model_to_mutate_input_object_type(
-            model=cls.model,
-            pascal_case_name=cls.model_name_in_different_case["pascal_case"],
-            registry=cls.registry,
-            field_converter_function=cls.cruddals_config.input_field_converter_function,
+            model=self.model,
+            pascal_case_name=self.model_name_in_different_case["pascal_case"],
+            registry=self.registry,
+            field_converter_function=self.cruddals_config.input_field_converter_function,
             type_mutation=TypesMutationEnum.CREATE_UPDATE.value,
             meta_attrs=dict_of_interface_attr.pop(MetaCruddalsInterfaceNames.META_INPUT_OBJECT_TYPE.value, None),
             extra_fields=dict_of_interface_attr.pop(CruddalsInterfaceNames.INPUT_OBJECT_TYPE.value, None),
         )
 
-    @classmethod
-    def _get_model_create_input_object_type(cls, dict_of_interface_attr) -> Type[graphene.InputObjectType]:
+
+    def _get_model_create_input_object_type(self, dict_of_interface_attr) -> Type[graphene.InputObjectType]:
         return convert_model_to_mutate_input_object_type(
-            model=cls.model,
-            pascal_case_name=cls.model_name_in_different_case["pascal_case"],
-            registry=cls.registry,
-            field_converter_function=cls.cruddals_config.create_input_field_converter_function,
+            model=self.model,
+            pascal_case_name=self.model_name_in_different_case["pascal_case"],
+            registry=self.registry,
+            field_converter_function=self.cruddals_config.create_input_field_converter_function,
             type_mutation=TypesMutationEnum.CREATE.value,
             meta_attrs=dict_of_interface_attr.pop(MetaCruddalsInterfaceNames.META_CREATE_INPUT_OBJECT_TYPE.value, None),
             extra_fields=dict_of_interface_attr.pop(CruddalsInterfaceNames.CREATE_INPUT_OBJECT_TYPE.value, None),
         )
 
-    @classmethod
-    def _get_model_update_input_object_type(cls, dict_of_interface_attr) -> Type[graphene.InputObjectType]:
+
+    def _get_model_update_input_object_type(self, dict_of_interface_attr) -> Type[graphene.InputObjectType]:
         return convert_model_to_mutate_input_object_type(
-            model=cls.model,
-            pascal_case_name=cls.model_name_in_different_case["pascal_case"],
-            registry=cls.registry,
-            field_converter_function=cls.cruddals_config.update_input_field_converter_function,
+            model=self.model,
+            pascal_case_name=self.model_name_in_different_case["pascal_case"],
+            registry=self.registry,
+            field_converter_function=self.cruddals_config.update_input_field_converter_function,
             type_mutation=TypesMutationEnum.UPDATE.value,
             meta_attrs=dict_of_interface_attr.pop(MetaCruddalsInterfaceNames.META_UPDATE_INPUT_OBJECT_TYPE.value, None),
             extra_fields=dict_of_interface_attr.pop(CruddalsInterfaceNames.UPDATE_INPUT_OBJECT_TYPE.value, None),
         )
 
-    @classmethod
-    def _get_model_filter_input_object_type(cls, dict_of_interface_attr) -> Type[graphene.InputObjectType]:
+
+    def _get_model_filter_input_object_type(self, dict_of_interface_attr) -> Type[graphene.InputObjectType]:
         return convert_model_to_filter_input_object_type(
-            model=cls.model,
-            pascal_case_name=cls.model_name_in_different_case["pascal_case"],
-            registry=cls.registry,
-            field_converter_function=cls.cruddals_config.filter_field_converter_function,
+            model=self.model,
+            pascal_case_name=self.model_name_in_different_case["pascal_case"],
+            registry=self.registry,
+            field_converter_function=self.cruddals_config.filter_field_converter_function,
             meta_attrs=dict_of_interface_attr.pop(MetaCruddalsInterfaceNames.META_FILTER_INPUT_OBJECT_TYPE.value, None),
             extra_fields=dict_of_interface_attr.pop(CruddalsInterfaceNames.FILTER_INPUT_OBJECT_TYPE.value, None),
         )
     
-    @classmethod
-    def _get_model_order_by_input_object_type(cls, dict_of_interface_attr) -> Type[graphene.InputObjectType]:
+
+    def _get_model_order_by_input_object_type(self, dict_of_interface_attr) -> Type[graphene.InputObjectType]:
         return convert_model_to_order_by_input_object_type(
-            model=cls.model,
-            pascal_case_name=cls.model_name_in_different_case["pascal_case"],
-            registry=cls.registry,
-            field_converter_function=cls.cruddals_config.order_by_field_converter_function,
+            model=self.model,
+            pascal_case_name=self.model_name_in_different_case["pascal_case"],
+            registry=self.registry,
+            field_converter_function=self.cruddals_config.order_by_field_converter_function,
             meta_attrs=dict_of_interface_attr.pop(MetaCruddalsInterfaceNames.META_ORDER_BY_INPUT_OBJECT_TYPE.value, None),
             extra_fields=dict_of_interface_attr.pop(CruddalsInterfaceNames.ORDER_BY_INPUT_OBJECT_TYPE.value, None),
         )
     
 
-    def get_dict_of_interface_attr( self, interfaces: Union[tuple[Type[Any], ...], None] = None, exclude_interfaces: Union[Tuple[str, ...], None] = None ) -> Dict[str, OrderedDict[str, Any]]:
+    def get_dict_of_interface_attr(self, interfaces: Union[tuple[Type[Any], ...], None] = None, exclude_interfaces: Union[Tuple[str, ...], None] = None ) -> Dict[str, OrderedDict[str, Any]]:
         if not interfaces:
             return {}
         exclude_interfaces = exclude_interfaces or ()
@@ -774,7 +736,7 @@ class CruddalsModel(SubclassWithMeta):
         cls._build_cruddals_model( config )
         cls._build_dict_for_operation_fields(functions, exclude_functions)
         cls._build_schema_query_mutation()
-        config.registry.register_model(config.model, TypeRegistryForModelEnum.graphene_cruddals.value, cls)
+        config.registry.register_model(config.model, TypeRegistryForModelEnum.CRUDDALS.value, cls)
 
         super().__init_subclass_with_meta__(**kwargs)
 

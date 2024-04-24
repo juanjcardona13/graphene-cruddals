@@ -2,8 +2,8 @@ import re
 import graphene
 from typing import Any, OrderedDict, Dict, Literal, Tuple, Type, Union
 from collections.abc import Iterable
-from graphene_cruddals.utils.typing.custom_typing import FunctionType, NameCaseType, RootFieldsType, TypeRegistryForModel
-from graphene_cruddals.registry.registry_global import RegistryGlobal
+from utils.typing.custom_typing import FunctionType, NameCaseType, RootFieldsType, TypeRegistryForModel
+from registry.registry_global import RegistryGlobal
 
 class Promise:
     """
@@ -12,7 +12,8 @@ class Promise:
     """
     pass
 
-def build_class(name: str, bases: tuple = (), attrs: dict = None) -> Any:
+
+def build_class(name: str, bases: tuple = (), attrs: Union[dict, None] = None) -> Any:
     if attrs is None:
         attrs = {}
     return type(name, bases, attrs)
