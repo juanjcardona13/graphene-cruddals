@@ -2,8 +2,8 @@ import re
 import graphene
 from typing import Any, List, OrderedDict, Dict, Literal, Tuple, Type, Union
 from collections.abc import Iterable
-from utils.typing.custom_typing import FunctionType, NameCaseType, RootFieldsType, TypeRegistryForModel
-from registry.registry_global import RegistryGlobal
+from graphene_cruddals.utils.typing.custom_typing import FunctionType, NameCaseType, RootFieldsType, TypeRegistryForModel
+from graphene_cruddals.registry.registry_global import RegistryGlobal
 
 class Promise:
     """
@@ -108,6 +108,7 @@ def camel_to_snake(s: Union[str, bytes]) -> str:
     s = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", s)
     return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s).lower()
 
+
 def get_separator(s: str) -> str:
     """
     Gets the separator from a string.
@@ -128,10 +129,44 @@ def get_separator(s: str) -> str:
         return ""
 
 
-def transform_string(
-    s: Union[str, bytes],
-    type: Literal["PascalCase", "camelCase", "snake_case", "kebab-case", "lowercase"],
-) -> str:
+def transform_string_with_separator(s: str, type: Literal["PascalCase", "camelCase", "snake_case", "kebab-case", "lowercase"], actual_separator: str) -> str:
+    """
+    Transform the input string based on the specified type and actual separator.
+
+    Args:
+        s (str): The input string to be transformed.
+        type (Literal["PascalCase", "camelCase", "snake_case", "kebab-case", "lowercase"]): 
+            The type of transformation to be applied. Valid options are:
+            - "PascalCase": Convert the string to PascalCase.
+            - "camelCase": Convert the string to camelCase.
+            - "snake_case": Convert the string to snake_case.
+            - "kebab-case": Convert the string to kebab-case.
+            - "lowercase": Convert the string to lowercase.
+        actual_separator (str): The actual separator in the input string.
+
+    Returns:
+        str: The transformed string.
+    """
+    if actual_separator:
+        if type == "PascalCase":
+            return "".join(word.title() for word in s.split(actual_separator))
+        elif type == "snake_case":
+            return "_".join(word.lower() for word in s.split(actual_separator))
+        elif type == "kebab-case":
+            return "-".join(word.lower() for word in s.split(actual_separator))
+        elif type == "lowercase":
+            return "".join(word.lower() for word in s.split(actual_separator))
+        elif type == "camelCase":
+            return (
+                s[0].lower() + "".join(word.title() for word in s.split(actual_separator))[1:]
+            )
+        else:
+            return "".join(word for word in s.split(actual_separator))
+    else:
+        raise ValueError("actual_separator cannot be empty.")
+
+
+def transform_string( s: Union[str, bytes], type: Literal["PascalCase", "camelCase", "snake_case", "kebab-case", "lowercase"], ) -> str:
     """
     Transform the input string based on the specified type.
 
@@ -149,22 +184,11 @@ def transform_string(
         str: The transformed string.
     """
     s = str(s)
+    if not s:
+        return s
     separator = get_separator(s)
     if separator:
-        if type == "PascalCase":
-            return "".join(word.title() for word in s.split(separator))
-        elif type == "snake_case":
-            return "_".join(word.lower() for word in s.split(separator))
-        elif type == "kebab-case":
-            return "-".join(word.lower() for word in s.split(separator))
-        elif type == "lowercase":
-            return "".join(word.lower() for word in s.split(separator))
-        elif type == "camelCase":
-            return (
-                s[0].lower() + "".join(word.title() for word in s.split(separator))[1:]
-            )
-        else:
-            return "".join(word for word in s.split(separator))
+        return transform_string_with_separator(s, type, separator)
     else:
         if type == "PascalCase":
             return s.title()
@@ -172,10 +196,11 @@ def transform_string(
             return s.lower()
         elif type == "camelCase":
             return s[0].lower() + s[1:]
+        elif type == "snake_case":
+            return camel_to_snake(s)
         else:
             return s
-        
-        
+
 
 def merge_dict(source: dict, destination: dict, overwrite: bool = False, keep_both: bool = False, path: Union[list[str], None] = None) -> Union[dict, OrderedDict]:
     """
@@ -234,7 +259,7 @@ def merge_nested_dicts(source: dict, destination: dict, key: str, overwrite: boo
         return destination[key]
     else:
         if keep_both:
-            return merge_both_values(destination[key], source[key])
+            return merge_both_values(source[key], destination[key])
         elif overwrite:
             return destination[key]
         else:
@@ -259,7 +284,7 @@ def merge_both_values(value1: Any, value2: Any) -> List[Any]:
         return [value1, value2]
 
 
-def get_name_of_model_in_different_case(name_model="", name_model_plural="", prefix="", suffix="") -> NameCaseType:
+def get_name_of_model_in_different_case(name_model:str, name_model_plural="", prefix="", suffix="") -> NameCaseType:
     """
     Get the name of a model in different cases.
 
@@ -278,8 +303,16 @@ def get_name_of_model_in_different_case(name_model="", name_model_plural="", pre
             - pascal_case: The model name in PascalCase.
             - plural_pascal_case: The plural form of the model name in PascalCase.
     """
-    name_model = transform_string(name_model, "camelCase")
-    name_model_plural = transform_string(name_model_plural, "camelCase")
+    if not name_model:
+        raise ValueError("name_model cannot be empty.")
+    if not name_model_plural:
+        name_model_plural = name_model + "s"
+    
+    camel_case_name_model = transform_string(name_model, "camelCase")
+    camel_case_name_model_plural = transform_string(name_model_plural, "camelCase")
+
+    pascal_case_name_model = transform_string(camel_case_name_model, "PascalCase")
+    pascal_case_name_model_plural = transform_string(camel_case_name_model_plural, "PascalCase")
 
     prefix_lower = prefix.lower()
     prefix_capitalize = prefix.capitalize()
@@ -287,14 +320,14 @@ def get_name_of_model_in_different_case(name_model="", name_model_plural="", pre
     suffix_lower = suffix.lower()
     suffix_capitalize = suffix.capitalize()
 
-    snake_case = f"{prefix_lower}{'_' if prefix else ''}{camel_to_snake(name_model)}{'_' if suffix else ''}{suffix_lower}"
-    plural_snake_case = f"{prefix_lower}{'_' if prefix else ''}{camel_to_snake(name_model_plural)}{'_' if suffix else ''}{suffix_lower}"
+    snake_case = f"{prefix_lower}{'_' if prefix else ''}{camel_to_snake(camel_case_name_model)}{'_' if suffix else ''}{suffix_lower}"
+    plural_snake_case = f"{prefix_lower}{'_' if prefix else ''}{camel_to_snake(camel_case_name_model_plural)}{'_' if suffix else ''}{suffix_lower}"
 
-    camel_case = f"{prefix_capitalize}{name_model}{suffix_capitalize}"
-    plural_camel_case = f"{prefix_lower}{name_model_plural}{suffix_capitalize}"
+    camel_case = f"{prefix_lower}{pascal_case_name_model if prefix else camel_case_name_model}{suffix_capitalize}"
+    plural_camel_case = f"{prefix_lower}{pascal_case_name_model_plural if prefix else camel_case_name_model_plural}{suffix_capitalize}"
 
-    pascal_case = f"{prefix_capitalize}{transform_string(name_model, 'PascalCase')}{suffix_capitalize}"
-    plural_pascal_case = f"{prefix_capitalize}{transform_string(name_model_plural, 'PascalCase')}{suffix_capitalize}"
+    pascal_case = f"{prefix_capitalize}{pascal_case_name_model}{suffix_capitalize}"
+    plural_pascal_case = f"{prefix_capitalize}{pascal_case_name_model_plural}{suffix_capitalize}"
 
     return {
         "snake_case": snake_case,
