@@ -7,27 +7,66 @@ from graphene.utils.subclass_with_meta import SubclassWithMeta
 from graphene.utils.props import props as graphene_get_props
 from graphene.utils.str_converters import to_snake_case
 
-from converters.main import convert_model_to_filter_input_object_type, convert_model_to_mutate_input_object_type, convert_model_to_object_type, convert_model_to_order_by_input_object_type, convert_model_to_paginated_object_type
-from utils.typing.custom_typing import GRAPHENE_TYPE, FunctionType, ModifyArgument, NameCaseType, TypesMutationEnum, CruddalsInterfaceNames, MetaCruddalsInterfaceNames, INTERFACES_NAME_CRUDDALS, CLASS_INTERFACE_FIELDS_NAMES, CLASS_INTERFACE_TYPE_NAMES, TypeRegistryForModelEnum
-from operation_fields.main import ActivateField, CreateUpdateField, DeactivateField, DeleteField, ListField, ReadField, SearchField
+from converters.main import (
+    convert_model_to_filter_input_object_type,
+    convert_model_to_mutate_input_object_type,
+    convert_model_to_object_type,
+    convert_model_to_order_by_input_object_type,
+    convert_model_to_paginated_object_type
+)
+from utils.typing.custom_typing import (
+    GRAPHENE_TYPE, FunctionType, ModifyArgument, NameCaseType,
+    TypesMutationEnum, CruddalsInterfaceNames, MetaCruddalsInterfaceNames,
+    INTERFACES_NAME_CRUDDALS, CLASS_INTERFACE_FIELDS_NAMES,
+    CLASS_INTERFACE_TYPE_NAMES, TypeRegistryForModelEnum
+)
+from operation_fields.main import (
+    ActivateField, CreateUpdateField, DeactivateField, DeleteField,
+    ListField, ReadField, SearchField
+)
 from registry.registry_global import RegistryGlobal, get_global_registry
-from utils.main import delete_keys, get_name_of_model_in_different_case, get_schema_query_mutation, merge_dict, validate_list_func_cruddals
-
-
-
+from utils.main import (
+    delete_keys, get_name_of_model_in_different_case,
+    get_schema_query_mutation, merge_dict, validate_list_func_cruddals
+)
 
 @dataclass
 class CruddalsBuilderConfig:
+    """
+    Configuration class for building CRUDDALS models.
+
+    Attributes:
+        model (Dict[str, Any]): The model dictionary representing the data structure.
+        pascal_case_name (str): The name of the model in PascalCase.
+        output_field_converter_function (Callable): Function to convert model fields to GraphQL output fields.
+        input_field_converter_function (Callable): Function to convert model fields to GraphQL input fields.
+        create_input_field_converter_function (Callable): Function to convert model fields to GraphQL input fields, Specialized for create operation.
+        update_input_field_converter_function (Callable): Function to convert model fields to GraphQL input fields, Specialized for update operation.
+        filter_field_converter_function (Callable): Function to convert model fields to GraphQL input fields, Specialized for filtering.
+        order_by_field_converter_function (Callable): Function to convert model fields to GraphQL input fields, Specialized for ordering.
+        create_resolver (Callable): Resolver function for create operation.
+        read_resolver (Callable): Resolver function for read operation.
+        update_resolver (Callable): Resolver function for update operation.
+        delete_resolver (Callable): Resolver function for delete operation.
+        deactivate_resolver (Callable): Resolver function for deactivate operation.
+        activate_resolver (Callable): Resolver function for activate operation.
+        list_resolver (Callable): Resolver function for list operation.
+        search_resolver (Callable): Resolver function for search operation.
+        plural_pascal_case_name (Union[str, None]): Plural form of the PascalCase name, if not provided, it uses the PascalCase name with an 's' suffix.
+        prefix (str): Prefix to be added to model name, defaults to an empty string.
+        suffix (str): Suffix to be added to model name, defaults to an empty string.
+        interfaces (Union[tuple[Type[Any], ...], None]): Tuple of CRUDDALS interfaces to extend the functionality of CRUDDALS, defaults to None.
+        exclude_interfaces (Union[Tuple[str, ...], None]): Tuple of interface names to exclude, defaults to None.
+        registry (Union[RegistryGlobal, None]): Global registry for models, defaults to None, if not provided, it uses the global registry.
+    """
     model: Dict[str, Any]
     pascal_case_name: str
-    
     output_field_converter_function: Callable[[Any], GRAPHENE_TYPE]
     input_field_converter_function: Callable[[Any], GRAPHENE_TYPE]
     create_input_field_converter_function: Callable[[Any], GRAPHENE_TYPE]
     update_input_field_converter_function: Callable[[Any], GRAPHENE_TYPE]
     filter_field_converter_function: Callable[[Any], GRAPHENE_TYPE]
     order_by_field_converter_function: Callable[[Any], GRAPHENE_TYPE]
-
     create_resolver: Callable[..., Any]
     read_resolver: Callable[..., Any]
     update_resolver: Callable[..., Any]
@@ -36,13 +75,11 @@ class CruddalsBuilderConfig:
     activate_resolver: Callable[..., Any]
     list_resolver: Callable[..., Any]
     search_resolver: Callable[..., Any]
-
     plural_pascal_case_name: Union[str, None] = None
     prefix: str = ""
     suffix: str = ""
     interfaces: Union[tuple[Type[Any], ...], None] = None
     exclude_interfaces: Union[Tuple[str, ...], None] = None
-
     registry: Union[RegistryGlobal, None] = None
 
     def __post_init__(self):
@@ -58,15 +95,38 @@ class CruddalsBuilderConfig:
 
 
 class BaseCruddals:
+    """
+    Base class for build CRUDDALS operations.
 
+    Attributes:
+        model (Dict[str, Any]): The model dictionary.
+        prefix (str): Prefix to be used in naming.
+        suffix (str): Suffix to be used in naming.
+        model_name_in_different_case (NameCaseType): Model names in various cases.
+        registry (RegistryGlobal): Global registry instance.
+        cruddals_config (CruddalsBuilderConfig): Configuration for CRUDDALS builder.
+        model_as_object_type (Type[graphene.ObjectType]): model converted to GraphQL ObjectType.
+        model_as_paginated_object_type (Type[graphene.ObjectType]): GraphQL ObjectType for paginated response including the model converted to ObjectType.
+        model_as_input_object_type (Type[graphene.InputObjectType]): model converted to GraphQL InputObjectType for connect operations.
+        model_as_create_input_object_type (Type[graphene.InputObjectType]): model converted to GraphQL InputObjectType for create operations.
+        model_as_update_input_object_type (Type[graphene.InputObjectType]): model converted to GraphQL InputObjectType for update operations.
+        model_as_filter_input_object_type (Type[graphene.InputObjectType]): model converted to GraphQL InputObjectType for filtering.
+        model_as_order_by_input_object_type (Type[graphene.InputObjectType]): model converted to GraphQL InputObjectType for ordering.
+        create_field (Union[CreateUpdateField, None]): Graphene Field configuration for create operation.
+        read_field (Union[ReadField, None]): Graphene Field configuration for read operation.
+        update_field (Union[CreateUpdateField, None]): Graphene Field configuration for update operation.
+        delete_field (Union[DeleteField, None]): Graphene Field configuration for delete operation.
+        deactivate_field (Union[DeactivateField, None]): Graphene Field configuration for deactivate operation.
+        activate_field (Union[ActivateField, None]): Graphene Field configuration for activate operation.
+        list_field (Union[ListField, None]): Graphene Field configuration for list operation.
+        search_field (Union[SearchField, None]): Graphene Field configuration for search operation.
+    """
     model: Dict[str, Any]
     prefix: str = ""
     suffix: str = ""
     model_name_in_different_case: NameCaseType
     registry: RegistryGlobal
-
     cruddals_config: CruddalsBuilderConfig
-
     model_as_object_type: Type[graphene.ObjectType]
     model_as_paginated_object_type: Type[graphene.ObjectType]
     model_as_input_object_type: Type[graphene.InputObjectType]
@@ -74,7 +134,6 @@ class BaseCruddals:
     model_as_update_input_object_type: Type[graphene.InputObjectType]
     model_as_filter_input_object_type: Type[graphene.InputObjectType]
     model_as_order_by_input_object_type: Type[graphene.InputObjectType]
-
     create_field: Union[CreateUpdateField, None] = None
     read_field: Union[ReadField, None] = None
     update_field: Union[CreateUpdateField, None] = None
@@ -84,7 +143,17 @@ class BaseCruddals:
     list_field: Union[ListField, None] = None
     search_field: Union[SearchField, None] = None
 
-    def get_where_arg(self, modify_where_argument:Union[ModifyArgument, Dict, None]=None, default_required=False ):
+    def get_where_arg(self, modify_where_argument: Union[ModifyArgument, Dict, None] = None, default_required: bool = False):
+        """
+        Constructs the 'where' argument for GraphQL search operation.
+
+        Parameters:
+            modify_where_argument (Union[ModifyArgument, Dict, None]): Modifications to apply to the default 'where' argument configuration.
+            default_required (bool): Specifies whether the 'where' argument is required by default.
+
+        Returns:
+            Dict[str, graphene.Argument]: A dictionary containing the 'where' argument configuration for GraphQL.
+        """
         modify_where_argument = modify_where_argument or {}
         default_values_for_where = {
             "type_": self.model_as_filter_input_object_type,
@@ -97,8 +166,16 @@ class BaseCruddals:
                 default_values_for_where[key] = modify_where_argument[key]
         return {"where": graphene.Argument(default_values_for_where.pop("type_"), **default_values_for_where)}
 
+    def get_input_arg(self, modify_input_argument: Union[ModifyArgument, Dict, None] = None):
+        """
+        Constructs the 'input' argument for GraphQL create and update operations.
 
-    def get_input_arg(self, modify_input_argument:Union[ModifyArgument, Dict, None]=None):
+        Parameters:
+            modify_input_argument (Union[ModifyArgument, Dict, None]): Modifications to apply to the default 'input' argument configuration.
+
+        Returns:
+            Dict[str, graphene.Argument]: A dictionary containing the 'input' argument configuration for GraphQL.
+        """
         modify_input_argument = modify_input_argument or {}
         default_values_for_input = {
             "type_": graphene.List(graphene.NonNull(self.model_as_input_object_type)),
@@ -110,9 +187,17 @@ class BaseCruddals:
             if key in modify_input_argument:
                 default_values_for_input[key] = modify_input_argument[key]
         return {"input": graphene.Argument(default_values_for_input.pop("type_"), **default_values_for_input)}
-    
 
-    def get_order_by_arg(self, modify_order_by_argument:Union[ModifyArgument, Dict, None]=None):
+    def get_order_by_arg(self, modify_order_by_argument: Union[ModifyArgument, Dict, None] = None):
+        """
+        Constructs the 'orderBy' argument for GraphQL search operation.
+
+        Parameters:
+            modify_order_by_argument (Union[ModifyArgument, Dict, None]): Modifications to apply to the default 'orderBy' argument configuration.
+
+        Returns:
+            Dict[str, graphene.Argument]: A dictionary containing the 'orderBy' argument configuration for GraphQL.
+        """
         modify_order_by_argument = modify_order_by_argument or {}
         default_values_for_order_by = {
             "type_": self.model_as_order_by_input_object_type,
@@ -125,8 +210,16 @@ class BaseCruddals:
                 default_values_for_order_by[key] = modify_order_by_argument[key]
         return {"order_by": graphene.Argument(default_values_for_order_by.pop("type_"), **default_values_for_order_by)}
 
+    def get_pagination_config_arg(self, modify_pagination_config_argument: Union[ModifyArgument, Dict, None] = None):
+        """
+        Constructs the 'paginationConfig' argument for GraphQL search operation.
 
-    def get_pagination_config_arg(self, modify_pagination_config_argument:Union[ModifyArgument, Dict, None]=None):
+        Parameters:
+            modify_pagination_config_argument (Union[ModifyArgument, Dict, None]): Modifications to apply to the default 'paginationConfig' argument configuration.
+
+        Returns:
+            Dict[str, graphene.Argument]: A dictionary containing the 'paginationConfig' argument configuration for GraphQL.
+        """
         modify_pagination_config_argument = modify_pagination_config_argument or {}
         default_values_for_pagination_config = {
             "type_": PaginationConfigInput,
@@ -139,19 +232,32 @@ class BaseCruddals:
                 default_values_for_pagination_config[key] = modify_pagination_config_argument[key]
         return {"pagination_config": graphene.Argument(default_values_for_pagination_config.pop("type_"), **default_values_for_pagination_config)}
 
-
     @staticmethod
     def add_cruddals_model_to_request(info, cruddals_model):
-        if info.context is None:
+        """
+        Attaches the CRUDDALS model to the GraphQL request context.
 
+        Parameters:
+            info (Any): GraphQL resolve information.
+            cruddals_model (Any): The CRUDDALS model instance to attach.
+        """
+        if info.context is None:
             class Context:
                 CruddalsModel = None
-
             info.context = Context()
         info.context.CruddalsModel = cruddals_model
 
-
     def get_function_lists(self, key, extra_pre_post_resolvers):
+        """
+        Retrieves a list of functions based on the specified key from the resolver configuration.
+
+        Parameters:
+            key (str): Key to look up in the resolver configuration.
+            extra_pre_post_resolvers (Dict): Dictionary containing additional resolver configurations.
+
+        Returns:
+            List[Callable]: A list of functions associated with the specified key.
+        """
         functions = extra_pre_post_resolvers.get(key, None)
         if functions is None:
             return []
@@ -159,16 +265,47 @@ class BaseCruddals:
             functions = [functions]
         return functions
 
-
     def get_pre_and_post_resolves(self, extra_pre_post_resolvers, name_function: str):
-        pre_resolves_model = self.get_function_lists( f"pre_{name_function}", extra_pre_post_resolvers )
-        post_resolves_model = self.get_function_lists( f"post_{name_function}", extra_pre_post_resolvers )
+        """
+        Retrieves pre and post resolver functions for a specific operation.
+
+        Parameters:
+            extra_pre_post_resolvers (Dict): Dictionary containing additional resolver configurations.
+            name_function (str): Name of the function to retrieve resolvers for.
+
+        Returns:
+            Tuple[List[Callable], List[Callable]]: A tuple containing lists of pre and post resolver functions.
+        """
+        pre_resolves_model = self.get_function_lists(
+            f"pre_{name_function}",
+            extra_pre_post_resolvers
+        )
+        post_resolves_model = self.get_function_lists(
+            f"post_{name_function}",
+            extra_pre_post_resolvers
+        )
         return pre_resolves_model, post_resolves_model
 
+    def wrap_resolver_with_pre_post_resolvers(
+        self, default_resolver, extra_pre_post_resolvers, name_function
+    ):
+        """
+        Wraps a resolver function with pre and post resolver functions.
 
-    def wrap_resolver_with_pre_post_resolvers( self, default_resolver, extra_pre_post_resolvers, name_function):
-        pre_resolves, post_resolves = self.get_pre_and_post_resolves( extra_pre_post_resolvers, name_function )
-        default_resolver = self.get_last_element( name_function, extra_pre_post_resolvers, default_resolver )
+        Parameters:
+            default_resolver (Callable): The default resolver function to wrap.
+            extra_pre_post_resolvers (Dict): Dictionary containing additional resolver configurations.
+            name_function (str): Name of the function to wrap resolvers for.
+
+        Returns:
+            Callable: The wrapped resolver function.
+        """
+        pre_resolves, post_resolves = self.get_pre_and_post_resolves(
+            extra_pre_post_resolvers, name_function
+        )
+        default_resolver = self.get_last_element(
+            name_function, extra_pre_post_resolvers, default_resolver
+        )
 
         def default_final_resolver_with_pre_and_post(root, info, **kw):
             self.add_cruddals_model_to_request(info, self)
@@ -176,7 +313,7 @@ class BaseCruddals:
                 root, info, kw = pre_resolve(root, info, **kw)
             response = default_resolver(root, info, **kw)
             for post_resolve in post_resolves:
-                kw["CRUDDALS_RESPONSE"] = response # TODa: Check if leave in kw, info, or new argument
+                kw["CRUDDALS_RESPONSE"] = response  # TODa: Check if leave in kw, info, or new argument
                 response = post_resolve(root, info, **kw)
             return response
 
@@ -186,8 +323,17 @@ class BaseCruddals:
             default_final_resolver_with_pre_and_post,
         )
 
-
     def get_interface_attrs(self, interface, include_meta_attrs=True):
+        """
+        Retrieves attributes from a Cruddals interface.
+
+        Parameters:
+            interface (Type[Any]): The interface to retrieve attributes from.
+            include_meta_attrs (bool): Whether to include meta attributes from the interface.
+
+        Returns:
+            Dict: A dictionary containing the attributes of the interface.
+        """
         if interface is not None:
             attrs_internal_cls_meta = {}
             if getattr(interface, "Meta", None) is not None and include_meta_attrs:
@@ -196,43 +342,62 @@ class BaseCruddals:
             return {**props_function, **attrs_internal_cls_meta}
         return {}
 
-
     def get_interface_meta_attrs(self, interface_type):
+        """
+        Retrieves meta attributes from a Cruddals interface type.
+
+        Parameters:
+            interface_type (Type[Any]): The interface type to retrieve meta attributes from.
+
+        Returns:
+            Dict: A dictionary containing the meta attributes of the interface type.
+        """
         if interface_type is not None:
             if getattr(interface_type, "Meta", None) is not None:
                 props = graphene_get_props(interface_type.Meta)
-
                 fields = props.get("fields", props.get("only_fields", props.get("only", [])))
                 exclude = props.get(
                     "exclude", props.get("exclude_fields", props.get("exclude", []))
                 )
-                assert not (
-                    fields and exclude
-                ), f"Cannot set both 'fields' and 'exclude' options on Type {self.model_name_in_different_case['pascal_case']}."
+                assert not (fields and exclude), f"Cannot set both 'fields' and 'exclude' options on Type {self.model_name_in_different_case['pascal_case']}."
                 return props
         return {}
 
-
     def validate_attrs(self, props, function_name, operation_name, class_name=None):
+        """
+        Validates the attributes of a function configuration.
+
+        Parameters:
+            props (Dict): Properties to validate.
+            function_name (str): Name of the function whose properties are being validated.
+            operation_name (str): Name of the operation associated with the function.
+            class_name (str): Name of the class, defaults to None.
+
+        Raises:
+            AssertionError: If invalid configuration is detected.
+        """
         class_name = class_name or self.model_name_in_different_case["pascal_case"]
         function_name_without = function_name.replace("override_total_", "")
         model_pre = props.get(f"pre_{function_name_without}")
         model_function = props.get(f"{function_name_without}")
         model_override_function = props.get(f"{function_name}")
         model_post = props.get(f"post_{function_name_without}")
-
-        assert not (
-            model_pre and model_override_function
-        ), f"Cannot set both 'pre_{function_name_without}' and '{function_name}' options on {operation_name} {class_name}."
-        assert not (
-            model_function and model_override_function
-        ), f"Cannot set both '{function_name_without}' and '{function_name}' options on {operation_name} {class_name}."
-        assert not (
-            model_post and model_override_function
-        ), f"Cannot set both 'post_{function_name_without}' and '{function_name}' options on {operation_name} {class_name}."
-    
+        assert not (model_pre and model_override_function), f"Cannot set both 'pre_{function_name_without}' and '{function_name}' options on {operation_name} {class_name}."
+        assert not (model_function and model_override_function), f"Cannot set both '{function_name_without}' and '{function_name}' options on {operation_name} {class_name}."
+        assert not (model_post and model_override_function), f"Cannot set both 'post_{function_name_without}' and '{function_name}' options on {operation_name} {class_name}."
 
     def get_last_element(self, key, obj, default=None) -> Any:
+        """
+        Retrieves the last element associated with a key from a dictionary, or a default value if the key is not found.
+
+        Parameters:
+            key (str): Key to look up in the dictionary.
+            obj (Dict): Dictionary to search.
+            default (Any): Default value to return if key is not found.
+
+        Returns:
+            Any: The last element associated with the key, or the default value.
+        """
         if key in obj:
             element = obj[key]
             if isinstance(element, list):
@@ -240,8 +405,13 @@ class BaseCruddals:
             return element
         return default
 
-
     def save_pre_post_how_list(self, kwargs):
+        """
+        Ensures that 'pre' and 'post' attributes in a dictionary are stored as lists.
+
+        Parameters:
+            kwargs (Dict): Dictionary containing 'pre' and 'post' attributes.
+        """
         for attr, value in kwargs.items():
             if "pre" in attr or "post" in attr:
                 if not isinstance(kwargs[attr], list):
@@ -249,22 +419,67 @@ class BaseCruddals:
 
 
     def get_state_controller_field(self, kwargs) -> str:
+        """
+        Retrieves the state controller field from a dictionary.
+
+        Parameters:
+            kwargs (Dict): Dictionary containing the state controller field.
+
+        Returns:
+            str: The state controller field.
+        """
         return self.get_last_element(
             "state_controller_field", kwargs, "is_active"
         )  # TODa: Debo de mirar esto donde lo voy a cuadrar para que sea global
 
 
 class CreateBuilder(BaseCruddals):
+    """
+    A class that represents a builder for creating GraphQL create fields.
+
+    This class provides methods for validating properties, building create fields,
+    and returning the create field object.
+
+    Inherits from BaseCruddals.
+
+    Methods:
+        validate_props_create_field: Validates the properties for the create field.
+        build_create: Builds a create field for a GraphQL schema.
+
+    """
+
     def validate_props_create_field(self, props, name=None):
+        """
+        Validates the properties for the create field.
+
+        Args:
+            props (List[str]): The list of properties to validate.
+            name (str, optional): The name of the field. Defaults to None.
+
+        """
+
         self.validate_attrs(props, "override_total_mutate", "Create", name)
     
     def build_create(self, resolve:Callable[..., Any], modify_input_argument:Union[ModifyArgument, Dict, None]=None, extra_arguments:Union[Dict[str, GRAPHENE_TYPE], None]=None, **extra_pre_post_resolvers) -> CreateUpdateField:
-        
+        """
+        Builds the create field object.
+
+        Args:
+            resolve (Callable[..., Any]): The resolver function for the create field.
+            modify_input_argument (Union[ModifyArgument, Dict, None], optional): The modify input argument. Defaults to None.
+            extra_arguments (Union[Dict[str, GRAPHENE_TYPE], None], optional): The extra arguments for the create field. Defaults to None.
+            **extra_pre_post_resolvers: Additional pre and post resolvers for the create field.
+
+        Returns:
+            CreateUpdateField: The create field object.
+
+        """
+
         input_arg = self.get_input_arg(modify_input_argument)
         extra_arguments = extra_arguments or {}
 
         name_function = "mutate"
-        resolver = self.wrap_resolver_with_pre_post_resolvers( resolve, extra_pre_post_resolvers, name_function )
+        resolver = self.wrap_resolver_with_pre_post_resolvers(resolve, extra_pre_post_resolvers, name_function)
 
         create_field = CreateUpdateField(
             model_object_type=self.model_as_object_type,
@@ -277,16 +492,49 @@ class CreateBuilder(BaseCruddals):
 
 
 class ReadBuilder(BaseCruddals):
+    """
+    A class that represents a builder for creating GraphQL read fields.
+
+    Inherits from BaseCruddals.
+
+    Methods:
+        validate_props_read_field: Validates the properties of a read field.
+        build_read: Builds a read field for a GraphQL schema.
+    """
+
     def validate_props_read_field(self, props, name=None):
+        """
+        Validates the properties of a read field.
+
+        Args:
+            props: The properties to validate.
+            name: The name of the field (optional).
+
+        Returns:
+            None
+        """
+
         self.validate_attrs(props, "override_total_read", "Read", name)
 
     def build_read(self, resolve:Callable[..., Any], modify_where_argument=None, extra_arguments:Union[Dict[str, GRAPHENE_TYPE], None]=None, **extra_pre_post_resolvers) -> ReadField:
+        """
+        Builds a read field for a GraphQL schema.
+
+        Args:
+            resolve: The resolver function for the read field.
+            modify_where_argument: The argument to modify the 'where' clause (optional).
+            extra_arguments: Extra arguments for the read field (optional).
+            **extra_pre_post_resolvers: Extra pre and post resolvers for the read field.
+
+        Returns:
+            The built ReadField object.
+        """
         
         where_arg = self.get_where_arg(modify_where_argument, True)
         extra_arguments = extra_arguments or {}
 
         name_function = "resolve"
-        resolver = self.wrap_resolver_with_pre_post_resolvers( resolve, extra_pre_post_resolvers, name_function )
+        resolver = self.wrap_resolver_with_pre_post_resolvers(resolve, extra_pre_post_resolvers, name_function)
 
         read_field = ReadField(
             model_object_type=self.model_as_object_type,
@@ -298,10 +546,39 @@ class ReadBuilder(BaseCruddals):
 
 
 class UpdateBuilder(BaseCruddals):
+    """
+    A class that provides methods to build an update field for a GraphQL schema.
+
+    Inherits from BaseCruddals.
+    """
+
     def validate_props_update_field(self, props, name=None):
+        """
+        Validates the properties of the update field.
+
+        Args:
+            props: The properties to validate.
+            name: The name of the field (optional).
+
+        Raises:
+            ValidationError: If the properties are invalid.
+        """
         self.validate_attrs(props, "override_total_mutate", "Update", name)
 
     def build_update(self, resolve:Callable[..., Any], modify_input_argument:Union[ModifyArgument, Dict, None]=None, extra_arguments:Union[Dict[str, GRAPHENE_TYPE], None]=None, **extra_pre_post_resolvers) -> CreateUpdateField:
+        """
+        Builds an update field for a GraphQL schema.
+
+        Args:
+            resolve: The resolver function for the update field.
+            modify_input_argument: The modify input argument (optional).
+            extra_arguments: Extra arguments for the update field (optional).
+            **extra_pre_post_resolvers: Extra pre and post resolvers for the update field.
+
+        Returns:
+            The created update field.
+
+        """
         input_arg = self.get_input_arg(modify_input_argument)
         extra_arguments = extra_arguments or {}
 
@@ -319,15 +596,54 @@ class UpdateBuilder(BaseCruddals):
 
 
 class DeleteBuilder(BaseCruddals):
+    """
+    A class that builds a delete field for GraphQL mutations.
+
+    This class provides methods to validate properties and build a delete field
+    for GraphQL mutations. It inherits from the `BaseCruddals` class.
+
+    Attributes:
+        model_as_object_type (ObjectType): The model as an object type.
+        model_name_in_different_case (Dict[str, str]): The model name in different cases.
+
+    Methods:
+        validate_props_delete_field: Validates the properties of the delete field.
+        build_delete: Builds the delete field for GraphQL mutations.
+
+    """
+
     def validate_props_delete_field(self, props, name=None):
+        """
+        Validates the properties of the delete field.
+
+        Args:
+            props (List[str]): The properties to validate.
+            name (str, optional): The name of the field. Defaults to None.
+
+        """
+
         self.validate_attrs(props, "override_total_delete", "Delete", name)
 
-    def build_delete(self, resolve:Callable[..., Any], modify_where_argument=None, extra_arguments:Union[Dict[str, GRAPHENE_TYPE], None]=None, **extra_pre_post_resolvers) -> DeleteField:
+    def build_delete(self, resolve: Callable[..., Any], modify_where_argument=None, extra_arguments: Union[Dict[str, GRAPHENE_TYPE], None] = None, **extra_pre_post_resolvers) -> DeleteField:
+        """
+        Builds the delete field for GraphQL mutations.
+
+        Args:
+            resolve (Callable): The resolver function for the delete field.
+            modify_where_argument (str, optional): The modify where argument. Defaults to None.
+            extra_arguments (Dict[str, GRAPHENE_TYPE], optional): Extra arguments for the delete field. Defaults to None.
+            **extra_pre_post_resolvers: Additional pre and post resolvers for the delete field.
+
+        Returns:
+            DeleteField: The built delete field.
+
+        """
+
         where_arg = self.get_where_arg(modify_where_argument, True)
         extra_arguments = extra_arguments or {}
 
         name_function = "mutate"
-        resolver = self.wrap_resolver_with_pre_post_resolvers( resolve, extra_pre_post_resolvers, name_function )
+        resolver = self.wrap_resolver_with_pre_post_resolvers(resolve, extra_pre_post_resolvers, name_function)
 
         delete_field = DeleteField(
             model_object_type=self.model_as_object_type,
@@ -339,15 +655,55 @@ class DeleteBuilder(BaseCruddals):
 
 
 class DeactivateBuilder(BaseCruddals):
+    """
+    A builder class for creating a DeactivateField object.
+
+    This class provides methods for validating properties and building a DeactivateField object
+    with the necessary arguments and resolver.
+
+    Args:
+        BaseCruddals: The base class for the DeactivateBuilder.
+
+    Attributes:
+        model_as_object_type (ObjectType): The model object type.
+        model_name_in_different_case (Dict[str, str]): The model name in different cases.
+
+    Methods:
+        validate_props_deactivate_field: Validates the properties for the deactivate field.
+        build_deactivate: Builds a DeactivateField object with the specified arguments and resolver.
+    """
+
     def validate_props_deactivate_field(self, props, name=None):
+        """
+        Validates the properties for the deactivate field.
+
+        Args:
+            props (List[str]): The list of properties to validate.
+            name (str, optional): The name of the field being validated.
+
+        Returns:
+            None
+        """
         self.validate_attrs(props, "override_total_deactivate", "Deactivate", name)
 
     def build_deactivate(self, resolve:Callable[..., Any], modify_where_argument=None, extra_arguments:Union[Dict[str, GRAPHENE_TYPE], None]=None, **extra_pre_post_resolvers) -> DeactivateField:
+        """
+        Builds a DeactivateField object with the specified arguments and resolver.
+
+        Args:
+            resolve (Callable): The resolver function for the deactivate field.
+            modify_where_argument (str, optional): The modify where argument.
+            extra_arguments (Dict[str, GRAPHENE_TYPE], optional): Extra arguments for the deactivate field.
+            **extra_pre_post_resolvers: Additional pre and post resolvers.
+
+        Returns:
+            DeactivateField: The built DeactivateField object.
+        """
         where_arg = self.get_where_arg(modify_where_argument, True)
         extra_arguments = extra_arguments or {}
 
         name_function = "mutate"
-        resolver = self.wrap_resolver_with_pre_post_resolvers( resolve, extra_pre_post_resolvers, name_function )
+        resolver = self.wrap_resolver_with_pre_post_resolvers(resolve, extra_pre_post_resolvers, name_function)
         # TODa: field_for_activate_deactivate
 
         deactivate_field = DeactivateField(
@@ -360,15 +716,59 @@ class DeactivateBuilder(BaseCruddals):
 
 
 class ActivateBuilder(BaseCruddals):
+    """
+    A builder class for creating an ActivateField object.
+
+    This class provides methods for validating properties and building an ActivateField object
+    with the necessary arguments and resolver.
+
+    Args:
+        BaseCruddals: The base class for the ActivateBuilder.
+
+    Attributes:
+        Inherits attributes from the BaseCruddals class.
+
+    Methods:
+        validate_props_activate_field: Validates the properties of the ActivateField.
+        build_activate: Builds an ActivateField object with the specified arguments and resolver.
+
+    """
+
     def validate_props_activate_field(self, props, name=None):
+        """
+        Validates the properties of the ActivateField.
+
+        Args:
+            props (dict): The properties to be validated.
+            name (str, optional): The name of the field. Defaults to None.
+
+        Returns:
+            None
+
+        """
+
         self.validate_attrs(props, "override_total_activate", "Activate", name)
 
     def build_activate(self, resolve:Callable[..., Any], modify_where_argument=None, extra_arguments:Union[Dict[str, GRAPHENE_TYPE], None]=None, **extra_pre_post_resolvers) -> ActivateField:
+        """
+        Builds an ActivateField object with the specified arguments and resolver.
+
+        Args:
+            resolve (Callable): The resolver function for the ActivateField.
+            modify_where_argument (str, optional): The modify where argument. Defaults to None.
+            extra_arguments (dict, optional): Extra arguments for the ActivateField. Defaults to None.
+            **extra_pre_post_resolvers: Additional pre and post resolvers for the ActivateField.
+
+        Returns:
+            ActivateField: The built ActivateField object.
+
+        """
+
         where_arg = self.get_where_arg(modify_where_argument, True)
         extra_arguments = extra_arguments or {}
 
         name_function = "mutate"
-        resolver = self.wrap_resolver_with_pre_post_resolvers( resolve, extra_pre_post_resolvers, name_function )
+        resolver = self.wrap_resolver_with_pre_post_resolvers(resolve, extra_pre_post_resolvers, name_function)
         # TODa: field_for_activate_deactivate
 
         activate_field = ActivateField(
@@ -381,14 +781,38 @@ class ActivateBuilder(BaseCruddals):
 
 
 class ListBuilder(BaseCruddals):
+    """
+    A class that builds a list field for GraphQL queries.
+
+    Inherits from BaseCruddals.
+    """
+
     def validate_props_list_field(self, props, name=None):
+        """
+        Validates the properties of a list field.
+
+        Args:
+            props: The properties of the list field.
+            name: The name of the list field (optional).
+        """
         self.validate_attrs(props, "override_total_list", "List", name)
 
-    def build_list(self, resolve:Callable[..., Any], extra_arguments=None, **extra_pre_post_resolvers) -> ListField:
+    def build_list(self, resolve: Callable[..., Any], extra_arguments=None, **extra_pre_post_resolvers) -> ListField:
+        """
+        Builds a list field for GraphQL queries.
+
+        Args:
+            resolve: The resolver function for the list field.
+            extra_arguments: Extra arguments for the list field (optional).
+            **extra_pre_post_resolvers: Extra pre and post resolvers for the list field.
+
+        Returns:
+            The built list field.
+        """
         extra_arguments = extra_arguments or {}
 
         name_function = "resolve"
-        resolver = self.wrap_resolver_with_pre_post_resolvers( resolve, extra_pre_post_resolvers, name_function )
+        resolver = self.wrap_resolver_with_pre_post_resolvers(resolve, extra_pre_post_resolvers, name_function)
 
         list_field = ListField(
             model_object_type=self.model_as_object_type,
@@ -410,10 +834,31 @@ class PaginationConfigInput(graphene.InputObjectType):
 
 
 class SearchBuilder(BaseCruddals):
+    """
+    A class that builds search functionality for a GraphQL API.
+
+    Inherits from BaseCruddals.
+    """
+
     def validate_props_search_field(self, props, name=None):
         self.validate_attrs(props, "override_total_search", "Search", name)
 
     def build_search(self, resolve:Callable[..., Any], modify_where_argument:Union[ModifyArgument, Dict, None]=None, modify_order_by_argument:Union[ModifyArgument, Dict, None]=None, modify_pagination_config_argument:Union[ModifyArgument, Dict, None]=None, extra_arguments:Union[Dict[str, GRAPHENE_TYPE], None]=None, **extra_pre_post_resolvers) -> SearchField:
+        """
+        Builds a search field for a GraphQL API.
+
+        Args:
+            resolve: A callable that resolves the search field.
+            modify_where_argument: An argument to modify the 'where' argument of the search field.
+            modify_order_by_argument: An argument to modify the 'order_by' argument of the search field.
+            modify_pagination_config_argument: An argument to modify the pagination configuration of the search field.
+            extra_arguments: Extra arguments to include in the search field.
+            **extra_pre_post_resolvers: Extra pre and post resolvers to include in the search field.
+
+        Returns:
+            A SearchField object representing the search field.
+
+        """
         where_arg = self.get_where_arg(modify_where_argument, False)
         order_by_arg = self.get_order_by_arg(modify_order_by_argument)
         pagination_config_arg = self.get_pagination_config_arg(modify_pagination_config_argument)
@@ -432,9 +877,41 @@ class SearchBuilder(BaseCruddals):
 
 
 class BuilderCruddalsModel( CreateBuilder, ReadBuilder, UpdateBuilder, DeleteBuilder, DeactivateBuilder, ActivateBuilder, ListBuilder, SearchBuilder, ):
+    """
+    A class that represents a builder for creating CRUD operations for a specific model.
 
+    Args:
+        config (CruddalsBuilderConfig): The configuration object for the builder.
+
+    Attributes:
+        model: The model associated with the builder.
+        pascal_case_name: The name of the model in PascalCase.
+        plural_pascal_case_name: The plural name of the model in PascalCase.
+        prefix: The prefix to be added to the model name.
+        suffix: The suffix to be added to the model name.
+        model_name_in_different_case: The name of the model in a different case.
+        registry: The registry for the model.
+        model_as_object_type: The model represented as a GraphQL object type.
+        model_as_paginated_object_type: The model represented as a paginated GraphQL object type.
+        model_as_input_object_type: The model represented as a GraphQL input object type.
+        model_as_filter_input_object_type: The model represented as a GraphQL filter input object type.
+        model_as_order_by_input_object_type: The model represented as a GraphQL order by input object type.
+        read_field: The read operation field.
+        list_field: The list operation field.
+        search_field: The search operation field.
+        create_field: The create operation field.
+        update_field: The update operation field.
+        activate_field: The activate operation field.
+        deactivate_field: The deactivate operation field.
+        delete_field: The delete operation field.
+    """
     def __init__(self, config: CruddalsBuilderConfig) -> None:
+        """
+        Initializes a new instance of the BuilderCruddalsModel class.
 
+        Args:
+            config (CruddalsBuilderConfig): The configuration object for the builder.
+        """
         attrs_for_child = [
             "model",
             "pascal_case_name",
@@ -620,7 +1097,7 @@ class BuilderCruddalsModel( CreateBuilder, ReadBuilder, UpdateBuilder, DeleteBui
             meta_attrs=dict_of_interface_attr.pop(MetaCruddalsInterfaceNames.META_FILTER_INPUT_OBJECT_TYPE.value, None),
             extra_fields=dict_of_interface_attr.pop(CruddalsInterfaceNames.FILTER_INPUT_OBJECT_TYPE.value, None),
         )
-    
+
 
     def _get_model_order_by_input_object_type(self, dict_of_interface_attr) -> Type[graphene.InputObjectType]:
         return convert_model_to_order_by_input_object_type(
@@ -631,7 +1108,7 @@ class BuilderCruddalsModel( CreateBuilder, ReadBuilder, UpdateBuilder, DeleteBui
             meta_attrs=dict_of_interface_attr.pop(MetaCruddalsInterfaceNames.META_ORDER_BY_INPUT_OBJECT_TYPE.value, None),
             extra_fields=dict_of_interface_attr.pop(CruddalsInterfaceNames.ORDER_BY_INPUT_OBJECT_TYPE.value, None),
         )
-    
+
 
     def get_dict_of_interface_attr(self, interfaces: Union[tuple[Type[Any], ...], None] = None, exclude_interfaces: Union[Tuple[str, ...], None] = None ) -> Dict[str, OrderedDict[str, Any]]:
         if not interfaces:
@@ -689,6 +1166,28 @@ class BuilderCruddalsModel( CreateBuilder, ReadBuilder, UpdateBuilder, DeleteBui
 
 
 class CruddalsModel(SubclassWithMeta):
+    """
+    A base class for creating CRUD-based GraphQL models using CRUDDALS.
+
+    Attributes:
+        Query (Type[graphene.ObjectType]): The query object type.
+        Mutation (Union[Type[graphene.ObjectType], None]): The mutation object type.
+        schema (graphene.Schema): The GraphQL schema.
+        operation_fields_for_queries (Dict[str, Union[graphene.Field, ReadField, ListField, SearchField]]):
+            The operation fields for queries.
+        operation_fields_for_mutations (Union[Dict[str, Union[graphene.Field, CreateUpdateField, DeleteField, DeactivateField, ActivateField]], None]]):
+            The operation fields for mutations.
+        meta (BuilderCruddalsModel): The metadata for the CRUDDALS model.
+
+    Methods:
+        __init_subclass_with_meta__: Initializes the subclass with metadata.
+        _initialize_attributes: Initializes the attributes of the subclass.
+        _build_cruddals_model: Builds the CRUDDALS model.
+        _build_dict_for_operation_fields: Builds the dictionary for operation fields.
+        _build_schema_query_mutation: Builds the schema, query, and mutation.
+
+    """
+
     Query: Type[graphene.ObjectType]
     Mutation: Union[Type[graphene.ObjectType], None] = None
     schema: graphene.Schema
