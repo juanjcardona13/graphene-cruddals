@@ -5,11 +5,22 @@ from utils.error_handling.error_types import ErrorCollectionType
 from utils.main import build_class
 
 
-def get_object_type_payload( model_object_type: Type[graphene.ObjectType], name_for_output_type:str, plural_model_name:str, include_success=False ):
+def get_object_type_payload(model_object_type: Type[graphene.ObjectType], name_for_output_type: str, plural_model_name: str, include_success=False):
+    """
+    Returns a dynamically generated GraphQL ObjectType class that represents the payload for a specific object type.
 
-    output_fields:Dict[str, Union[ListField, graphene.List, graphene.Boolean]] = OrderedDict(
+    Args:
+        model_object_type (Type[graphene.ObjectType]): The object type to be included in the payload.
+        name_for_output_type (str): The name for the output type.
+        plural_model_name (str): The plural name for the model.
+        include_success (bool, optional): Whether to include a success field in the payload. Defaults to False.
+
+    Returns:
+        type: The dynamically generated GraphQL ObjectType class representing the payload.
+    """
+    output_fields: Dict[str, Union[ListField, graphene.List, graphene.Boolean]] = OrderedDict(
         {
-            "objects": ListField(model_object_type, "objects"), # TODa: If I want that the name of the field is the plural_model_name, I need to change the name of the field to plural_model_name, Missing check impact
+            "objects": ListField(model_object_type, "objects"),  # TODa: If I want that the name of the field is the plural_model_name, I need to change the name of the field to plural_model_name, Missing check impact
             "errors_report": graphene.List(ErrorCollectionType),
         }
     )

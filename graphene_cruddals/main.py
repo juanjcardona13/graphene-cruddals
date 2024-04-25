@@ -46,6 +46,9 @@ class CruddalsBuilderConfig:
     registry: Union[RegistryGlobal, None] = None
 
     def __post_init__(self):
+        """
+        Performs post-initialization checks for the configuration.
+        """
         if self.model is None:
             raise ValueError("model is required")
         if not self.pascal_case_name:
@@ -55,6 +58,7 @@ class CruddalsBuilderConfig:
 
 
 class BaseCruddals:
+
     model: Dict[str, Any]
     prefix: str = ""
     suffix: str = ""
