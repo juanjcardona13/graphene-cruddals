@@ -191,13 +191,17 @@ def transform_string( s: Union[str, bytes], type: Literal["PascalCase", "camelCa
         return transform_string_with_separator(s, type, separator)
     else:
         if type == "PascalCase":
-            return s.title()
+            if s[0].islower():
+                s = s[0].upper() + s[1:]
+            return s
         elif type == "lowercase":
             return s.lower()
         elif type == "camelCase":
             return s[0].lower() + s[1:]
         elif type == "snake_case":
             return camel_to_snake(s)
+        elif type == "kebab-case":
+            return transform_string_with_separator(camel_to_snake(s), "kebab-case", "_")
         else:
             return s
 

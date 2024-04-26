@@ -2,7 +2,7 @@ import pytest
 import graphene
 from graphene_cruddals.utils.main import build_class, delete_keys, is_iterable, camelize, camel_to_snake, transform_string, merge_dict, get_name_of_model_in_different_case, exists_conversion_for_model, get_converted_model, validate_list_func_cruddals, get_schema_query_mutation
 
-# Tests for build_class function
+
 def test_build_class():
     attrs = {'attr1': True, 'method1': lambda self, x: x + 1}
     CustomClass = build_class('CustomClass', (object,), attrs)
@@ -10,7 +10,7 @@ def test_build_class():
     assert instance.attr1 == True
     assert instance.method1(1) == 2
 
-# Tests for delete_keys function
+
 def test_delete_keys():
     original_dict = {'key1': 'value1', 'key2': 'value2', 'key3': 'value3'}
     modified_dict = delete_keys(original_dict, ['key2', 'key3'])
@@ -18,33 +18,49 @@ def test_delete_keys():
     assert 'key3' not in modified_dict
     assert modified_dict == {'key1': 'value1'}
 
-# Tests for is_iterable function
+
 def test_is_iterable():
     assert is_iterable([1, 2, 3]) == True
     assert is_iterable("string", exclude_string=True) == False
     assert is_iterable("string", exclude_string=False) == True
 
-# Tests for camelize function
+
 def test_camelize():
     data = {'my_key': {'nested_key': 'value'}}
     camelized_data = camelize(data)
     assert camelized_data == {'myKey': {'nestedKey': 'value'}}
 
-# Tests for camel_to_snake function
+
 def test_camel_to_snake():
     assert camel_to_snake('CamelCase') == 'camel_case'
     assert camel_to_snake('camelCase') == 'camel_case'
 
-# Tests for transform_string function
+
 @pytest.mark.parametrize("input_string, transformation_type, expected", [
-    ("CamelCase", "snake_case", "camel_case"),
+    ("camelCase", "snake_case", "camel_case"),
+    ("camelCase", "kebab-case", "camel-case"),
+    ("camelCase", "camelCase", "camelCase"),
+    ("camelCase", "PascalCase", "CamelCase"),
+    
+    ("PascalCase", "snake_case", "pascal_case"),
+    ("PascalCase", "kebab-case", "pascal-case"),
+    ("PascalCase", "camelCase", "pascalCase"),
+    ("PascalCase", "PascalCase", "PascalCase"),
+    
+    ("snake_case", "snake_case", "snake_case"),
+    ("snake_case", "kebab-case", "snake-case"),
+    ("snake_case", "camelCase", "snakeCase"),
     ("snake_case", "PascalCase", "SnakeCase"),
+    
+    ("kebab-case", "snake_case", "kebab_case"),
+    ("kebab-case", "kebab-case", "kebab-case"),
     ("kebab-case", "camelCase", "kebabCase"),
+    ("kebab-case", "PascalCase", "KebabCase"),
 ])
 def test_transform_string(input_string, transformation_type, expected):
     assert transform_string(input_string, transformation_type) == expected
 
-# Tests for merge_dict function
+
 def test_merge_dict():
     src = {'key1': 'value1'}
     dest = {'key2': 'value2'}
@@ -88,8 +104,6 @@ def test_merge_dict():
     assert result == {'key1': {'nested_key': 'nested_value2'}}
 
 
-
-# Tests for get_name_of_model_in_different_case function
 def test_get_name_of_model_in_different_case():
     cases = get_name_of_model_in_different_case("Model", "Models", "Pre", "Suffix")
     assert cases['snake_case'] == 'pre_model_suffix'

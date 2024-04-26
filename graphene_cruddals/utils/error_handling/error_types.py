@@ -1,3 +1,4 @@
+from typing import Dict, List
 import graphene
 from graphene_cruddals.utils.main import camelize
 
@@ -10,7 +11,7 @@ class ErrorType(graphene.ObjectType):
     messages = graphene.List(graphene.NonNull(graphene.String), required=True)
 
     @classmethod
-    def from_errors(cls, errors):
+    def from_errors(cls, errors: Dict[str, List[str]]) -> List["ErrorType"]:
         """
         Converts a dictionary of errors into a list of ErrorType instances.
 
@@ -20,7 +21,7 @@ class ErrorType(graphene.ObjectType):
         Returns:
             list: A list of ErrorType instances representing the errors.
         """
-        data = camelize(errors)
+        data: Dict[str, List[str]] = camelize(errors) # type: ignore
         return [cls(field=key, messages=value) for key, value in data.items()]
 
 
@@ -39,7 +40,7 @@ class ErrorCollectionType(graphene.ObjectType):
     errors = graphene.List(ErrorType)
 
     @classmethod
-    def from_errors(cls, object_position, errors):
+    def from_errors(cls, object_position:str, errors:List[ErrorType]) -> "ErrorCollectionType":
         """
         Creates an instance of ErrorCollectionType from the given object position and errors.
 
