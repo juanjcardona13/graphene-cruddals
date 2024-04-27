@@ -1,5 +1,5 @@
-from typing import Any, Hashable, Union
-from graphene_cruddals.utils.typing.custom_typing import TypeRegistryForField, TypeRegistryForModel
+from typing import Any, Dict, Hashable, Union
+from graphene_cruddals.utils.typing.custom_typing import GRAPHENE_TYPE, TypeRegistryForField, TypeRegistryForModel
 
 
 class RegistryGlobal:
@@ -8,8 +8,8 @@ class RegistryGlobal:
     It stores registries in a hashable format to ensure uniqueness and provide easy access.
 
     Attributes:
-        _model_registry (dict): A dictionary that stores the registered models.
-        _field_registry (dict): A dictionary that stores the registered fields.
+        _model_registry (Dict[str, Any]): A dictionary that stores the registered models.
+        _field_registry (Dict[str, Any]): A dictionary that stores the registered fields.
     """
 
     def __init__(self):
@@ -24,7 +24,7 @@ class RegistryGlobal:
         Registers a model with a specific class under a given type registry.
 
         Args:
-            model (Any): The model to be registered.
+            model (Dict[str, Any]): The model to be registered.
             type_to_registry (TypeRegistryForModel): The type of registry for the model.
             value: (Any): The value to associate with the model.
 
@@ -39,15 +39,15 @@ class RegistryGlobal:
         Retrieves the registry for a specific model.
 
         Args:
-            model (Any): The model to retrieve the registry for.
+            model (Dict[str, Any]): The model to retrieve the registry for.
 
         Returns:
             dict: The registry for the specified model.
         """
         model = self.get_hashable_value(model)
-        return self._model_registry.get(model)
+        return self._model_registry.get(model, {})
 
-    def get_all_models_registered(self):
+    def get_all_models_registered(self) -> Dict[str, Any]:
         """
         Retrieves all the registered models.
 
@@ -56,7 +56,7 @@ class RegistryGlobal:
         """
         return self._model_registry
 
-    def get_all_fields_registered(self):
+    def get_all_fields_registered(self) -> Dict[str, Any]:
         """
         Retrieves all the registered fields.
 
@@ -65,7 +65,7 @@ class RegistryGlobal:
         """
         return self._field_registry
 
-    def register_field(self, field: Any, type_to_registry: TypeRegistryForField, converted):
+    def register_field(self, field: Any, type_to_registry: TypeRegistryForField, converted: GRAPHENE_TYPE):
         """
         Registers a field in the registry.
 
@@ -91,7 +91,7 @@ class RegistryGlobal:
             dict: The registry for the specified field.
         """
         field = self.get_hashable_value(field)
-        return self._field_registry.get(field)
+        return self._field_registry.get(field, {})
 
     @staticmethod
     def get_hashable_value(value: Any):

@@ -21,6 +21,12 @@ GRAPHENE_TYPE = Union[
     graphene.Enum,
     graphene.Argument,
     graphene.Dynamic,
+    graphene.Field,
+    graphene.InputField,
+    graphene.Interface,
+    graphene.ObjectType,
+    graphene.InputObjectType,
+    graphene.Union,
 ]
 
 class ModifyArgument(TypedDict):

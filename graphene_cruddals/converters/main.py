@@ -1,23 +1,13 @@
 import graphene
 from typing import Any, Dict, Literal, OrderedDict, Type, Callable, List, Union, Any, Callable
-from graphene_cruddals.operation_fields.main import ListField
+from graphene_cruddals.operation_fields.main import ListField, PaginationInterface
 from graphene_cruddals.utils.main import build_class, exists_conversion_for_model, get_converted_model
 from graphene_cruddals.utils.typing.custom_typing import GRAPHENE_TYPE, MetaAttrs, TypesMutation, TypesMutationEnum, TypeRegistryForModelEnum
 from graphene_cruddals.registry.registry_global import RegistryGlobal, get_global_registry
 
-class PaginationInterface(graphene.Interface):
-    """
-    Defines a GraphQL Interface for pagination-related attributes.
-    """
-    total = graphene.Field(graphene.Int)
-    page = graphene.Field(graphene.Int)
-    pages = graphene.Field(graphene.Int)
-    has_next = graphene.Field(graphene.Boolean)
-    has_prev = graphene.Field(graphene.Boolean)
-    index_start_obj = graphene.Field(graphene.Int)
-    index_end_obj = graphene.Field(graphene.Int)
 
-def get_final_exclude_fields(meta_attrs: Union[OrderedDict[str, Any], MetaAttrs, None] = None,) -> Union[List[str], None]:
+
+def get_final_exclude_fields(meta_attrs: Union[Dict[str, List[str]], OrderedDict[str, List[str]], MetaAttrs, None] = None,) -> Union[List[str], None]:
     """
     Determines the fields to exclude based on metadata attributes.
 
@@ -30,6 +20,7 @@ def get_final_exclude_fields(meta_attrs: Union[OrderedDict[str, Any], MetaAttrs,
         if meta_attrs.get("exclude_fields"):
             return meta_attrs.get("exclude_fields")
     return None
+
 
 def get_final_fields(model: Dict[str, Any], meta_attrs: Union[OrderedDict[str, Any], MetaAttrs, None] = None,) -> Union[List[str], Literal["__all__"]]:
     """
@@ -52,6 +43,7 @@ def get_final_fields(model: Dict[str, Any], meta_attrs: Union[OrderedDict[str, A
             final_fields = [field for field in final_fields if field not in final_exclude_fields]
     return final_fields or []
 
+
 def get_converted_fields(
     model: Dict[str, Any],
     field_converter_function: Callable[[Any], GRAPHENE_TYPE],
@@ -71,6 +63,7 @@ def get_converted_fields(
         if final_fields == "__all__" or field_name in final_fields:
             converted_fields[field_name] = field_converter_function(field_type)
     return converted_fields
+
 
 def convert_model_to_object_type(
     model: Dict[str, Any],
@@ -117,6 +110,7 @@ def convert_model_to_object_type(
     )
     registry.register_model(model, TypeRegistryForModelEnum.OBJECT_TYPE.value, class_model_object_type)
     return class_model_object_type
+
 
 def convert_model_to_paginated_object_type(
     model: Dict[str, Any],
@@ -169,6 +163,7 @@ def convert_model_to_paginated_object_type(
     )
     registry.register_model(model, TypeRegistryForModelEnum.PAGINATED_OBJECT_TYPE.value, class_model_paginated_object_type)
     return class_model_paginated_object_type
+
 
 def convert_model_to_mutate_input_object_type(
     model: Dict[str, Any],
@@ -232,6 +227,7 @@ def convert_model_to_mutate_input_object_type(
     )
     registry.register_model(model, type_of_registry, class_model_input_object_type)
     return class_model_input_object_type
+
 
 def convert_model_to_filter_input_object_type(
     model: Dict[str, Any],
@@ -307,6 +303,7 @@ def convert_model_to_filter_input_object_type(
     )
     registry.register_model(model, TypeRegistryForModelEnum.INPUT_OBJECT_TYPE_FOR_SEARCH.value, class_model_filter_input_object_type)
     return class_model_filter_input_object_type
+
 
 def convert_model_to_order_by_input_object_type(
     model: Dict[str, Any],

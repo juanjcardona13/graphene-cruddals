@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from typing import Any, Callable, Dict, Optional, OrderedDict, Tuple, Type, Union
 
 import graphene
-from graphene.types.generic import GenericScalar
 from graphene.utils.subclass_with_meta import SubclassWithMeta
 from graphene.utils.props import props as graphene_get_props
 from graphene.utils.str_converters import to_snake_case
@@ -22,7 +21,7 @@ from graphene_cruddals.utils.typing.custom_typing import (
 )
 from graphene_cruddals.operation_fields.main import (
     ActivateField, CreateUpdateField, DeactivateField, DeleteField,
-    ListField, ReadField, SearchField
+    ListField, PaginationConfigInput, ReadField, SearchField
 )
 from graphene_cruddals.registry.registry_global import RegistryGlobal, get_global_registry
 from graphene_cruddals.utils.main import (
@@ -821,16 +820,6 @@ class ListBuilder(BaseCruddals):
             resolver=resolver
         )
         return list_field
-
-
-class IntOrAll(GenericScalar):
-    class Meta:
-        description = "The page size can be int or 'All'"
-
-
-class PaginationConfigInput(graphene.InputObjectType):
-    page = graphene.InputField(graphene.Int, default_value=1)
-    items_per_page = graphene.InputField(IntOrAll, default_value="All")
 
 
 class SearchBuilder(BaseCruddals):
