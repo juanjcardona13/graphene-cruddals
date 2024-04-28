@@ -2,15 +2,15 @@ import graphene
 from graphene.test import Client
 import pytest
 from unittest.mock import Mock
-from graphene_cruddals.converters.main import (
+from graphene_cruddals.types.utils import (
     get_final_exclude_fields,
     get_final_fields,
     get_converted_fields,
-    convert_model_to_object_type,
-    convert_model_to_paginated_object_type,
-    convert_model_to_mutate_input_object_type,
-    convert_model_to_filter_input_object_type,
-    convert_model_to_order_by_input_object_type,
+    convert_model_to_model_object_type,
+    convert_model_to_model_paginated_object_type,
+    convert_model_to_model_mutate_input_object_type,
+    convert_model_to_model_filter_input_object_type,
+    convert_model_to_model_order_by_input_object_type,
 )
 from graphene import ObjectType, InputObjectType
 
@@ -92,13 +92,13 @@ def test_get_converted_fields():
     assert get_converted_fields(model, mock_field_converter_function) == expected
 
 
-def test_convert_model_to_object_type(setup_registry):
-    result = convert_model_to_object_type(model, "Test", setup_registry, mock_field_converter_function)
+def test_convert_model_to_model_object_type(setup_registry):
+    result = convert_model_to_model_object_type(model, "Test", setup_registry, mock_field_converter_function)
     assert isinstance(result, type)
     assert issubclass(result, ObjectType)
 
 
-def test_convert_model_to_paginated_object_type(setup_registry):
+def test_convert_model_to_model_paginated_object_type(setup_registry):
     model = {
         "field1": int,
         "field2": str,
@@ -106,43 +106,39 @@ def test_convert_model_to_paginated_object_type(setup_registry):
     }
     pascal_case_name = "TestModel"
     registry = mock_registry
-    model_object_type = convert_model_to_object_type(model, "TestModel", registry, mock_field_converter_function)
+    model_object_type = convert_model_to_model_object_type(model, "TestModel", registry, mock_field_converter_function)
     extra_fields = {
         "extra_field1": int,
         "extra_field2": str,
     }
     
-    pagination_object_type = convert_model_to_paginated_object_type( model, pascal_case_name, registry, model_object_type, extra_fields )
+    pagination_object_type = convert_model_to_model_paginated_object_type( model, pascal_case_name, registry, model_object_type, extra_fields )
 
     assert issubclass(pagination_object_type, ObjectType)
     assert pagination_object_type._meta.name == "TestModelPaginatedType"
 
 
-def test_convert_model_to_filter_input_object_type(setup_registry):
-    # Define a sample model
+def test_convert_model_to_model_filter_input_object_type(setup_registry):
     model = {
         "id": int,
         "name": str,
         "age": int,
     }
     
-    # Define other required parameters
     pascal_case_name = "Person"
     registry = mock_registry
-    field_converter_function = lambda field_type: graphene.String if field_type == str else graphene.Int
+    field_converter_function = lambda field_type, registry: graphene.String() if field_type == str else graphene.Int()
     meta_attrs = None
     extra_fields = None
     
-    # Convert the model to a filter InputObjectType
-    filter_input_object_type = convert_model_to_filter_input_object_type( model, pascal_case_name, registry, field_converter_function, meta_attrs, extra_fields ) # type: ignore
+    filter_input_object_type = convert_model_to_model_filter_input_object_type( model, pascal_case_name, registry, field_converter_function, meta_attrs, extra_fields ) # type: ignore
     
-    # Assert that the filter InputObjectType is correctly constructed
     assert issubclass(filter_input_object_type, graphene.InputObjectType)
     assert filter_input_object_type._meta.name == "FilterPersonInput"
 
-    assert filter_input_object_type.id == graphene.Int # type: ignore
-    assert filter_input_object_type.name == graphene.String # type: ignore
-    assert filter_input_object_type.age == graphene.Int # type: ignore
+    assert isinstance(filter_input_object_type._meta.fields['id'], graphene.InputField)
+    assert isinstance(filter_input_object_type._meta.fields['name'], graphene.InputField)
+    assert isinstance(filter_input_object_type._meta.fields['age'], graphene.InputField)
 
     assert "AND" in filter_input_object_type._meta.fields
     assert isinstance(filter_input_object_type._meta.fields["AND"], graphene.Dynamic)
@@ -152,7 +148,7 @@ def test_convert_model_to_filter_input_object_type(setup_registry):
     assert isinstance(filter_input_object_type._meta.fields["NOT"], graphene.Dynamic)
 
 
-def test_convert_model_to_order_by_input_object_type(setup_registry):
+def test_convert_model_to_model_order_by_input_object_type(setup_registry):
     # Define a sample model
     model = {
         "id": int,
@@ -163,17 +159,17 @@ def test_convert_model_to_order_by_input_object_type(setup_registry):
     # Define other required parameters
     pascal_case_name = "Person"
     registry = mock_registry
-    field_converter_function = lambda field_type: graphene.String if field_type == str else graphene.Int
+    field_converter_function = lambda field_type, registry: graphene.String() if field_type == str else graphene.Int()
     meta_attrs = None
     extra_fields = None
     
     # Convert the model to an order_by InputObjectType
-    order_by_input_object_type = convert_model_to_order_by_input_object_type( model, pascal_case_name, registry, field_converter_function, meta_attrs, extra_fields ) # type: ignore
+    order_by_input_object_type = convert_model_to_model_order_by_input_object_type( model, pascal_case_name, registry, field_converter_function, meta_attrs, extra_fields ) # type: ignore
     
     # Assert that the order_by InputObjectType is correctly constructed
     assert issubclass(order_by_input_object_type, graphene.InputObjectType)
     assert order_by_input_object_type._meta.name == "OrderByPersonInput"
 
-    assert order_by_input_object_type.id == graphene.Int # type: ignore
-    assert order_by_input_object_type.name == graphene.String # type: ignore
-    assert order_by_input_object_type.age == graphene.Int # type: ignore
+    assert isinstance(order_by_input_object_type._meta.fields['id'], graphene.InputField)
+    assert isinstance(order_by_input_object_type._meta.fields['name'], graphene.InputField)
+    assert isinstance(order_by_input_object_type._meta.fields['age'], graphene.InputField)

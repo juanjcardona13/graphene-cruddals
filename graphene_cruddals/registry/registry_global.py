@@ -34,7 +34,7 @@ class RegistryGlobal:
         model = self.get_hashable_value(model)
         self._model_registry.setdefault(model, {})[type_to_registry] = value
 
-    def get_registry_for_model(self, model: Any):
+    def get_registry_for_model(self, model: Any) -> Dict[TypeRegistryForModel, Any]:
         """
         Retrieves the registry for a specific model.
 

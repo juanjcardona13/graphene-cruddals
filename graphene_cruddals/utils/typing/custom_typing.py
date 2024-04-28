@@ -120,13 +120,13 @@ CLASS_INTERFACE_TYPE_NAMES = [
 
 CLASS_INTERFACE_FIELDS_NAMES = [
     "CreateField",
-    "ReadField",
+    "ModelReadField",
     "UpdateField",
-    "DeleteField",
-    "DeactivateField",
-    "ActivateField",
-    "ListField",
-    "SearchField",
+    "ModelDeleteField",
+    "ModelDeactivateField",
+    "ModelActivateField",
+    "ModelListField",
+    "ModelSearchField",
 ]
 
 INTERFACES_NAME_CRUDDALS = CLASS_INTERFACE_FIELDS_NAMES + CLASS_INTERFACE_TYPE_NAMES + INTERFACE_META_CLASS_TYPE_NAMES
@@ -134,13 +134,13 @@ INTERFACES_NAME_CRUDDALS = CLASS_INTERFACE_FIELDS_NAMES + CLASS_INTERFACE_TYPE_N
 
 class CruddalsInterfaceNames(Enum):
     CREATE_FIELD = "CreateField"
-    READ_FIELD = "ReadField"
+    READ_FIELD = "ModelReadField"
     UPDATE_FIELD = "UpdateField"
-    DELETE_FIELD = "DeleteField"
-    DEACTIVATE_FIELD = "DeactivateField"
-    ACTIVATE_FIELD = "ActivateField"
-    LIST_FIELD = "ListField"
-    SEARCH_FIELD = "SearchField"
+    DELETE_FIELD = "ModelDeleteField"
+    DEACTIVATE_FIELD = "ModelDeactivateField"
+    ACTIVATE_FIELD = "ModelActivateField"
+    LIST_FIELD = "ModelListField"
+    SEARCH_FIELD = "ModelSearchField"
 
     OBJECT_TYPE = "ObjectType"
     INPUT_OBJECT_TYPE = "InputObjectType"
@@ -181,8 +181,5 @@ class TypesMutationEnum(Enum):
 
 
 class MetaAttrs(TypedDict):
-    only: Union[List[str], Literal["__all__"], None] # For support of graphene-django
-    only_fields: Union[List[str], Literal["__all__"], None] # For support of graphene-django
-    fields: Union[List[str], Literal["__all__"], None]
-    exclude: Union[List[str], None] # For support of graphene-django
+    only_fields: Union[List[str], Literal["__all__"], None]
     exclude_fields: Union[List[str], None]

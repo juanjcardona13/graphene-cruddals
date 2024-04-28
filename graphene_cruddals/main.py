@@ -6,28 +6,48 @@ from graphene.utils.subclass_with_meta import SubclassWithMeta
 from graphene.utils.props import props as graphene_get_props
 from graphene.utils.str_converters import to_snake_case
 
-from graphene_cruddals.converters.main import (
-    convert_model_to_filter_input_object_type,
-    convert_model_to_mutate_input_object_type,
-    convert_model_to_object_type,
-    convert_model_to_order_by_input_object_type,
-    convert_model_to_paginated_object_type
+from graphene_cruddals.types.utils import (
+    convert_model_to_model_filter_input_object_type,
+    convert_model_to_model_mutate_input_object_type,
+    convert_model_to_model_object_type,
+    convert_model_to_model_order_by_input_object_type,
+    convert_model_to_model_paginated_object_type,
 )
 from graphene_cruddals.utils.typing.custom_typing import (
-    GRAPHENE_TYPE, FunctionType, ModifyArgument, NameCaseType,
-    TypesMutationEnum, CruddalsInterfaceNames, MetaCruddalsInterfaceNames,
-    INTERFACES_NAME_CRUDDALS, CLASS_INTERFACE_FIELDS_NAMES,
-    CLASS_INTERFACE_TYPE_NAMES, TypeRegistryForModelEnum
+    GRAPHENE_TYPE,
+    FunctionType,
+    ModifyArgument,
+    NameCaseType,
+    TypesMutationEnum,
+    CruddalsInterfaceNames,
+    MetaCruddalsInterfaceNames,
+    INTERFACES_NAME_CRUDDALS,
+    CLASS_INTERFACE_FIELDS_NAMES,
+    CLASS_INTERFACE_TYPE_NAMES,
+    TypeRegistryForModelEnum,
 )
 from graphene_cruddals.operation_fields.main import (
-    ActivateField, CreateUpdateField, DeactivateField, DeleteField,
-    ListField, PaginationConfigInput, ReadField, SearchField
+    ModelActivateField,
+    ModelCreateUpdateField,
+    ModelDeactivateField,
+    ModelDeleteField,
+    ModelListField,
+    PaginationConfigInput,
+    ModelReadField,
+    ModelSearchField,
 )
-from graphene_cruddals.registry.registry_global import RegistryGlobal, get_global_registry
+from graphene_cruddals.registry.registry_global import (
+    RegistryGlobal,
+    get_global_registry,
+)
 from graphene_cruddals.utils.main import (
-    delete_keys, get_name_of_model_in_different_case,
-    get_schema_query_mutation, merge_dict, validate_list_func_cruddals
+    delete_keys,
+    get_name_of_model_in_different_case,
+    get_schema_query_mutation,
+    merge_dict,
+    validate_list_func_cruddals,
 )
+
 
 @dataclass
 class CruddalsBuilderConfig:
@@ -58,6 +78,7 @@ class CruddalsBuilderConfig:
         exclude_interfaces (Union[Tuple[str, ...], None]): Tuple of interface names to exclude, defaults to None.
         registry (Union[RegistryGlobal, None]): Global registry for models, defaults to None, if not provided, it uses the global registry.
     """
+
     model: Dict[str, Any]
     pascal_case_name: str
     output_field_converter_function: Callable[[Any], GRAPHENE_TYPE]
@@ -111,15 +132,16 @@ class BaseCruddals:
         model_as_update_input_object_type (Type[graphene.InputObjectType]): model converted to GraphQL InputObjectType for update operations.
         model_as_filter_input_object_type (Type[graphene.InputObjectType]): model converted to GraphQL InputObjectType for filtering.
         model_as_order_by_input_object_type (Type[graphene.InputObjectType]): model converted to GraphQL InputObjectType for ordering.
-        create_field (Union[CreateUpdateField, None]): Graphene Field configuration for create operation.
-        read_field (Union[ReadField, None]): Graphene Field configuration for read operation.
-        update_field (Union[CreateUpdateField, None]): Graphene Field configuration for update operation.
-        delete_field (Union[DeleteField, None]): Graphene Field configuration for delete operation.
-        deactivate_field (Union[DeactivateField, None]): Graphene Field configuration for deactivate operation.
-        activate_field (Union[ActivateField, None]): Graphene Field configuration for activate operation.
-        list_field (Union[ListField, None]): Graphene Field configuration for list operation.
-        search_field (Union[SearchField, None]): Graphene Field configuration for search operation.
+        create_field (Union[ModelCreateUpdateField, None]): Graphene Field configuration for create operation.
+        read_field (Union[ModelReadField, None]): Graphene Field configuration for read operation.
+        update_field (Union[ModelCreateUpdateField, None]): Graphene Field configuration for update operation.
+        delete_field (Union[ModelDeleteField, None]): Graphene Field configuration for delete operation.
+        deactivate_field (Union[ModelDeactivateField, None]): Graphene Field configuration for deactivate operation.
+        activate_field (Union[ModelActivateField, None]): Graphene Field configuration for activate operation.
+        list_field (Union[ModelListField, None]): Graphene Field configuration for list operation.
+        search_field (Union[ModelSearchField, None]): Graphene Field configuration for search operation.
     """
+
     model: Dict[str, Any]
     prefix: str = ""
     suffix: str = ""
@@ -133,103 +155,14 @@ class BaseCruddals:
     model_as_update_input_object_type: Type[graphene.InputObjectType]
     model_as_filter_input_object_type: Type[graphene.InputObjectType]
     model_as_order_by_input_object_type: Type[graphene.InputObjectType]
-    create_field: Union[CreateUpdateField, None] = None
-    read_field: Union[ReadField, None] = None
-    update_field: Union[CreateUpdateField, None] = None
-    delete_field: Union[DeleteField, None] = None
-    deactivate_field: Union[DeactivateField, None] = None
-    activate_field: Union[ActivateField, None] = None
-    list_field: Union[ListField, None] = None
-    search_field: Union[SearchField, None] = None
-
-    def get_where_arg(self, modify_where_argument: Union[ModifyArgument, Dict, None] = None, default_required: bool = False):
-        """
-        Constructs the 'where' argument for GraphQL search operation.
-
-        Parameters:
-            modify_where_argument (Union[ModifyArgument, Dict, None]): Modifications to apply to the default 'where' argument configuration.
-            default_required (bool): Specifies whether the 'where' argument is required by default.
-
-        Returns:
-            Dict[str, graphene.Argument]: A dictionary containing the 'where' argument configuration for GraphQL.
-        """
-        modify_where_argument = modify_where_argument or {}
-        default_values_for_where = {
-            "type_": self.model_as_filter_input_object_type,
-            "name": "where",
-            "required": default_required,
-            "description": "",
-        }
-        for key in default_values_for_where.keys():
-            if key in modify_where_argument:
-                default_values_for_where[key] = modify_where_argument[key]
-        return {"where": graphene.Argument(default_values_for_where.pop("type_"), **default_values_for_where)}
-
-    def get_input_arg(self, modify_input_argument: Union[ModifyArgument, Dict, None] = None):
-        """
-        Constructs the 'input' argument for GraphQL create and update operations.
-
-        Parameters:
-            modify_input_argument (Union[ModifyArgument, Dict, None]): Modifications to apply to the default 'input' argument configuration.
-
-        Returns:
-            Dict[str, graphene.Argument]: A dictionary containing the 'input' argument configuration for GraphQL.
-        """
-        modify_input_argument = modify_input_argument or {}
-        default_values_for_input = {
-            "type_": graphene.List(graphene.NonNull(self.model_as_input_object_type)),
-            "name": "input",
-            "required": False,
-            "description": "",
-        }
-        for key in default_values_for_input.keys():
-            if key in modify_input_argument:
-                default_values_for_input[key] = modify_input_argument[key]
-        return {"input": graphene.Argument(default_values_for_input.pop("type_"), **default_values_for_input)}
-
-    def get_order_by_arg(self, modify_order_by_argument: Union[ModifyArgument, Dict, None] = None):
-        """
-        Constructs the 'orderBy' argument for GraphQL search operation.
-
-        Parameters:
-            modify_order_by_argument (Union[ModifyArgument, Dict, None]): Modifications to apply to the default 'orderBy' argument configuration.
-
-        Returns:
-            Dict[str, graphene.Argument]: A dictionary containing the 'orderBy' argument configuration for GraphQL.
-        """
-        modify_order_by_argument = modify_order_by_argument or {}
-        default_values_for_order_by = {
-            "type_": self.model_as_order_by_input_object_type,
-            "name": "orderBy",
-            "required": False,
-            "description": "",
-        }
-        for key in default_values_for_order_by.keys():
-            if key in modify_order_by_argument:
-                default_values_for_order_by[key] = modify_order_by_argument[key]
-        return {"order_by": graphene.Argument(default_values_for_order_by.pop("type_"), **default_values_for_order_by)}
-
-    def get_pagination_config_arg(self, modify_pagination_config_argument: Union[ModifyArgument, Dict, None] = None):
-        """
-        Constructs the 'paginationConfig' argument for GraphQL search operation.
-
-        Parameters:
-            modify_pagination_config_argument (Union[ModifyArgument, Dict, None]): Modifications to apply to the default 'paginationConfig' argument configuration.
-
-        Returns:
-            Dict[str, graphene.Argument]: A dictionary containing the 'paginationConfig' argument configuration for GraphQL.
-        """
-        modify_pagination_config_argument = modify_pagination_config_argument or {}
-        default_values_for_pagination_config = {
-            "type_": PaginationConfigInput,
-            "name": "paginationConfig",
-            "required": False,
-            "description": "",
-        }
-        for key in default_values_for_pagination_config.keys():
-            if key in modify_pagination_config_argument:
-                default_values_for_pagination_config[key] = modify_pagination_config_argument[key]
-        return {"pagination_config": graphene.Argument(default_values_for_pagination_config.pop("type_"), **default_values_for_pagination_config)}
+    create_field: Union[ModelCreateUpdateField, None] = None
+    read_field: Union[ModelReadField, None] = None
+    update_field: Union[ModelCreateUpdateField, None] = None
+    delete_field: Union[ModelDeleteField, None] = None
+    deactivate_field: Union[ModelDeactivateField, None] = None
+    activate_field: Union[ModelActivateField, None] = None
+    list_field: Union[ModelListField, None] = None
+    search_field: Union[ModelSearchField, None] = None
 
     @staticmethod
     def add_cruddals_model_to_request(info, cruddals_model):
@@ -241,8 +174,10 @@ class BaseCruddals:
             cruddals_model (Any): The CRUDDALS model instance to attach.
         """
         if info.context is None:
+
             class Context:
                 CruddalsModel = None
+
             info.context = Context()
         info.context.CruddalsModel = cruddals_model
 
@@ -276,12 +211,10 @@ class BaseCruddals:
             Tuple[List[Callable], List[Callable]]: A tuple containing lists of pre and post resolver functions.
         """
         pre_resolves_model = self.get_function_lists(
-            f"pre_{name_function}",
-            extra_pre_post_resolvers
+            f"pre_{name_function}", extra_pre_post_resolvers
         )
         post_resolves_model = self.get_function_lists(
-            f"post_{name_function}",
-            extra_pre_post_resolvers
+            f"post_{name_function}", extra_pre_post_resolvers
         )
         return pre_resolves_model, post_resolves_model
 
@@ -312,7 +245,9 @@ class BaseCruddals:
                 root, info, kw = pre_resolve(root, info, **kw)
             response = default_resolver(root, info, **kw)
             for post_resolve in post_resolves:
-                kw["CRUDDALS_RESPONSE"] = response  # TODa: Check if leave in kw, info, or new argument
+                kw["CRUDDALS_RESPONSE"] = (
+                    response  # TODa: Check if leave in kw, info, or new argument
+                )
                 response = post_resolve(root, info, **kw)
             return response
 
@@ -354,11 +289,15 @@ class BaseCruddals:
         if interface_type is not None:
             if getattr(interface_type, "Meta", None) is not None:
                 props = graphene_get_props(interface_type.Meta)
-                fields = props.get("fields", props.get("only_fields", props.get("only", [])))
+                fields = props.get(
+                    "fields", props.get("only_fields", props.get("only", []))
+                )
                 exclude = props.get(
                     "exclude", props.get("exclude_fields", props.get("exclude", []))
                 )
-                assert not (fields and exclude), f"Cannot set both 'fields' and 'exclude' options on Type {self.model_name_in_different_case['pascal_case']}."
+                assert not (
+                    fields and exclude
+                ), f"Cannot set both 'fields' and 'exclude' options on Type {self.model_name_in_different_case['pascal_case']}."
                 return props
         return {}
 
@@ -381,9 +320,15 @@ class BaseCruddals:
         model_function = props.get(f"{function_name_without}")
         model_override_function = props.get(f"{function_name}")
         model_post = props.get(f"post_{function_name_without}")
-        assert not (model_pre and model_override_function), f"Cannot set both 'pre_{function_name_without}' and '{function_name}' options on {operation_name} {class_name}."
-        assert not (model_function and model_override_function), f"Cannot set both '{function_name_without}' and '{function_name}' options on {operation_name} {class_name}."
-        assert not (model_post and model_override_function), f"Cannot set both 'post_{function_name_without}' and '{function_name}' options on {operation_name} {class_name}."
+        assert not (
+            model_pre and model_override_function
+        ), f"Cannot set both 'pre_{function_name_without}' and '{function_name}' options on {operation_name} {class_name}."
+        assert not (
+            model_function and model_override_function
+        ), f"Cannot set both '{function_name_without}' and '{function_name}' options on {operation_name} {class_name}."
+        assert not (
+            model_post and model_override_function
+        ), f"Cannot set both 'post_{function_name_without}' and '{function_name}' options on {operation_name} {class_name}."
 
     def get_last_element(self, key, obj, default=None) -> Any:
         """
@@ -417,21 +362,6 @@ class BaseCruddals:
                     kwargs[attr] = [value]
 
 
-    def get_state_controller_field(self, kwargs) -> str:
-        """
-        Retrieves the state controller field from a dictionary.
-
-        Parameters:
-            kwargs (Dict): Dictionary containing the state controller field.
-
-        Returns:
-            str: The state controller field.
-        """
-        return self.get_last_element(
-            "state_controller_field", kwargs, "is_active"
-        )  # TODa: Debo de mirar esto donde lo voy a cuadrar para que sea global
-
-
 class CreateBuilder(BaseCruddals):
     """
     A class that represents a builder for creating GraphQL create fields.
@@ -458,36 +388,39 @@ class CreateBuilder(BaseCruddals):
         """
 
         self.validate_attrs(props, "override_total_mutate", "Create", name)
-    
-    def build_create(self, resolve:Callable[..., Any], modify_input_argument:Union[ModifyArgument, Dict, None]=None, extra_arguments:Union[Dict[str, GRAPHENE_TYPE], None]=None, **extra_pre_post_resolvers) -> CreateUpdateField:
+
+    def build_create(
+        self,
+        resolve: Callable[..., Any],
+        extra_arguments: Union[Dict[str, GRAPHENE_TYPE], None] = None,
+        **extra_pre_post_resolvers,
+    ) -> ModelCreateUpdateField:
         """
         Builds the create field object.
 
         Args:
             resolve (Callable[..., Any]): The resolver function for the create field.
-            modify_input_argument (Union[ModifyArgument, Dict, None], optional): The modify input argument. Defaults to None.
             extra_arguments (Union[Dict[str, GRAPHENE_TYPE], None], optional): The extra arguments for the create field. Defaults to None.
             **extra_pre_post_resolvers: Additional pre and post resolvers for the create field.
 
         Returns:
-            CreateUpdateField: The create field object.
+            ModelCreateUpdateField: The create field object.
 
         """
-
-        input_arg = self.get_input_arg(modify_input_argument)
         extra_arguments = extra_arguments or {}
-
         name_function = "mutate"
-        resolver = self.wrap_resolver_with_pre_post_resolvers(resolve, extra_pre_post_resolvers, name_function)
+        resolver = self.wrap_resolver_with_pre_post_resolvers(
+            resolve, extra_pre_post_resolvers, name_function
+        )
 
-        create_field = CreateUpdateField(
-            model_object_type=self.model_as_object_type,
+        return ModelCreateUpdateField(
             plural_model_name=self.model_name_in_different_case["plural_pascal_case"],
             type_operation="Create",
-            args={**input_arg, **extra_arguments},
-            resolver=resolver
+            model=self.model,
+            registry=self.registry,
+            resolver=resolver,
+            **extra_arguments,
         )
-        return create_field
 
 
 class ReadBuilder(BaseCruddals):
@@ -515,33 +448,37 @@ class ReadBuilder(BaseCruddals):
 
         self.validate_attrs(props, "override_total_read", "Read", name)
 
-    def build_read(self, resolve:Callable[..., Any], modify_where_argument=None, extra_arguments:Union[Dict[str, GRAPHENE_TYPE], None]=None, **extra_pre_post_resolvers) -> ReadField:
+    def build_read(
+        self,
+        resolve: Callable[..., Any],
+        extra_arguments: Union[Dict[str, GRAPHENE_TYPE], None] = None,
+        **extra_pre_post_resolvers,
+    ) -> ModelReadField:
         """
         Builds a read field for a GraphQL schema.
 
         Args:
             resolve: The resolver function for the read field.
-            modify_where_argument: The argument to modify the 'where' clause (optional).
             extra_arguments: Extra arguments for the read field (optional).
             **extra_pre_post_resolvers: Extra pre and post resolvers for the read field.
 
         Returns:
-            The built ReadField object.
+            The built ModelReadField object.
         """
-        
-        where_arg = self.get_where_arg(modify_where_argument, True)
+
         extra_arguments = extra_arguments or {}
-
         name_function = "resolve"
-        resolver = self.wrap_resolver_with_pre_post_resolvers(resolve, extra_pre_post_resolvers, name_function)
-
-        read_field = ReadField(
-            model_object_type=self.model_as_object_type,
-            singular_model_name=self.model_name_in_different_case["pascal_case"],
-            args={**where_arg, **extra_arguments},
-            resolver=resolver
+        resolver = self.wrap_resolver_with_pre_post_resolvers(
+            resolve, extra_pre_post_resolvers, name_function
         )
-        return read_field
+
+        return ModelReadField(
+            singular_model_name=self.model_name_in_different_case["pascal_case"],
+            model=self.model,
+            registry=self.registry,
+            resolver=resolver,
+            **extra_arguments,
+        )
 
 
 class UpdateBuilder(BaseCruddals):
@@ -564,13 +501,17 @@ class UpdateBuilder(BaseCruddals):
         """
         self.validate_attrs(props, "override_total_mutate", "Update", name)
 
-    def build_update(self, resolve:Callable[..., Any], modify_input_argument:Union[ModifyArgument, Dict, None]=None, extra_arguments:Union[Dict[str, GRAPHENE_TYPE], None]=None, **extra_pre_post_resolvers) -> CreateUpdateField:
+    def build_update(
+        self,
+        resolve: Callable[..., Any],
+        extra_arguments: Union[Dict[str, GRAPHENE_TYPE], None] = None,
+        **extra_pre_post_resolvers,
+    ) -> ModelCreateUpdateField:
         """
         Builds an update field for a GraphQL schema.
 
         Args:
             resolve: The resolver function for the update field.
-            modify_input_argument: The modify input argument (optional).
             extra_arguments: Extra arguments for the update field (optional).
             **extra_pre_post_resolvers: Extra pre and post resolvers for the update field.
 
@@ -578,20 +519,19 @@ class UpdateBuilder(BaseCruddals):
             The created update field.
 
         """
-        input_arg = self.get_input_arg(modify_input_argument)
         extra_arguments = extra_arguments or {}
-
         name_function = "mutate"
-        resolver = self.wrap_resolver_with_pre_post_resolvers( resolve, extra_pre_post_resolvers, name_function )
-
-        update_field = CreateUpdateField(
-            model_object_type=self.model_as_object_type,
+        resolver = self.wrap_resolver_with_pre_post_resolvers(
+            resolve, extra_pre_post_resolvers, name_function
+        )
+        return ModelCreateUpdateField(
             plural_model_name=self.model_name_in_different_case["plural_pascal_case"],
             type_operation="Update",
-            args={**input_arg, **extra_arguments},
-            resolver=resolver
+            model=self.model,
+            registry=self.registry,
+            resolver=resolver,
+            **extra_arguments,
         )
-        return update_field
 
 
 class DeleteBuilder(BaseCruddals):
@@ -623,41 +563,44 @@ class DeleteBuilder(BaseCruddals):
 
         self.validate_attrs(props, "override_total_delete", "Delete", name)
 
-    def build_delete(self, resolve: Callable[..., Any], modify_where_argument=None, extra_arguments: Union[Dict[str, GRAPHENE_TYPE], None] = None, **extra_pre_post_resolvers) -> DeleteField:
+    def build_delete(
+        self,
+        resolve: Callable[..., Any],
+        extra_arguments: Union[Dict[str, GRAPHENE_TYPE], None] = None,
+        **extra_pre_post_resolvers,
+    ) -> ModelDeleteField:
         """
         Builds the delete field for GraphQL mutations.
 
         Args:
             resolve (Callable): The resolver function for the delete field.
-            modify_where_argument (str, optional): The modify where argument. Defaults to None.
             extra_arguments (Dict[str, GRAPHENE_TYPE], optional): Extra arguments for the delete field. Defaults to None.
             **extra_pre_post_resolvers: Additional pre and post resolvers for the delete field.
 
         Returns:
-            DeleteField: The built delete field.
+            ModelDeleteField: The built delete field.
 
         """
 
-        where_arg = self.get_where_arg(modify_where_argument, True)
         extra_arguments = extra_arguments or {}
-
         name_function = "mutate"
-        resolver = self.wrap_resolver_with_pre_post_resolvers(resolve, extra_pre_post_resolvers, name_function)
-
-        delete_field = DeleteField(
-            model_object_type=self.model_as_object_type,
-            plural_model_name=self.model_name_in_different_case["plural_pascal_case"],
-            args={**where_arg, **extra_arguments},
-            resolver=resolver
+        resolver = self.wrap_resolver_with_pre_post_resolvers(
+            resolve, extra_pre_post_resolvers, name_function
         )
-        return delete_field
+        return ModelDeleteField(
+            plural_model_name=self.model_name_in_different_case["plural_pascal_case"],
+            model=self.model,
+            registry=self.registry,
+            resolver=resolver,
+            **extra_arguments,
+        )
 
 
 class DeactivateBuilder(BaseCruddals):
     """
-    A builder class for creating a DeactivateField object.
+    A builder class for creating a ModelDeactivateField object.
 
-    This class provides methods for validating properties and building a DeactivateField object
+    This class provides methods for validating properties and building a ModelDeactivateField object
     with the necessary arguments and resolver.
 
     Args:
@@ -669,7 +612,7 @@ class DeactivateBuilder(BaseCruddals):
 
     Methods:
         validate_props_deactivate_field: Validates the properties for the deactivate field.
-        build_deactivate: Builds a DeactivateField object with the specified arguments and resolver.
+        build_deactivate: Builds a ModelDeactivateField object with the specified arguments and resolver.
     """
 
     def validate_props_deactivate_field(self, props, name=None):
@@ -685,40 +628,44 @@ class DeactivateBuilder(BaseCruddals):
         """
         self.validate_attrs(props, "override_total_deactivate", "Deactivate", name)
 
-    def build_deactivate(self, resolve:Callable[..., Any], modify_where_argument=None, extra_arguments:Union[Dict[str, GRAPHENE_TYPE], None]=None, **extra_pre_post_resolvers) -> DeactivateField:
+    def build_deactivate(
+        self,
+        resolve: Callable[..., Any],
+        field_for_activate_deactivate: Union[str, None] = None,
+        extra_arguments: Union[Dict[str, GRAPHENE_TYPE], None] = None,
+        **extra_pre_post_resolvers,
+    ) -> ModelDeactivateField:
         """
-        Builds a DeactivateField object with the specified arguments and resolver.
+        Builds a ModelDeactivateField object with the specified arguments and resolver.
 
         Args:
             resolve (Callable): The resolver function for the deactivate field.
-            modify_where_argument (str, optional): The modify where argument.
             extra_arguments (Dict[str, GRAPHENE_TYPE], optional): Extra arguments for the deactivate field.
             **extra_pre_post_resolvers: Additional pre and post resolvers.
 
         Returns:
-            DeactivateField: The built DeactivateField object.
+            ModelDeactivateField: The built ModelDeactivateField object.
         """
-        where_arg = self.get_where_arg(modify_where_argument, True)
         extra_arguments = extra_arguments or {}
-
         name_function = "mutate"
-        resolver = self.wrap_resolver_with_pre_post_resolvers(resolve, extra_pre_post_resolvers, name_function)
-        # TODa: field_for_activate_deactivate
-
-        deactivate_field = DeactivateField(
-            model_object_type=self.model_as_object_type,
-            plural_model_name=self.model_name_in_different_case["plural_pascal_case"],
-            args={**where_arg, **extra_arguments},
-            resolver=resolver
+        resolver = self.wrap_resolver_with_pre_post_resolvers(
+            resolve, extra_pre_post_resolvers, name_function
         )
-        return deactivate_field
+        return ModelDeactivateField(
+            plural_model_name=self.model_name_in_different_case["plural_pascal_case"],
+            model=self.model,
+            registry=self.registry,
+            state_controller_field=field_for_activate_deactivate,
+            resolver=resolver,
+            **extra_arguments,
+        )
 
 
 class ActivateBuilder(BaseCruddals):
     """
-    A builder class for creating an ActivateField object.
+    A builder class for creating an ModelActivateField object.
 
-    This class provides methods for validating properties and building an ActivateField object
+    This class provides methods for validating properties and building an ModelActivateField object
     with the necessary arguments and resolver.
 
     Args:
@@ -728,14 +675,14 @@ class ActivateBuilder(BaseCruddals):
         Inherits attributes from the BaseCruddals class.
 
     Methods:
-        validate_props_activate_field: Validates the properties of the ActivateField.
-        build_activate: Builds an ActivateField object with the specified arguments and resolver.
+        validate_props_activate_field: Validates the properties of the ModelActivateField.
+        build_activate: Builds an ModelActivateField object with the specified arguments and resolver.
 
     """
 
     def validate_props_activate_field(self, props, name=None):
         """
-        Validates the properties of the ActivateField.
+        Validates the properties of the ModelActivateField.
 
         Args:
             props (dict): The properties to be validated.
@@ -748,35 +695,38 @@ class ActivateBuilder(BaseCruddals):
 
         self.validate_attrs(props, "override_total_activate", "Activate", name)
 
-    def build_activate(self, resolve:Callable[..., Any], modify_where_argument=None, extra_arguments:Union[Dict[str, GRAPHENE_TYPE], None]=None, **extra_pre_post_resolvers) -> ActivateField:
+    def build_activate(
+        self,
+        resolve: Callable[..., Any],
+        field_for_activate_deactivate: Union[str, None] = None,
+        extra_arguments: Union[Dict[str, GRAPHENE_TYPE], None] = None,
+        **extra_pre_post_resolvers,
+    ) -> ModelActivateField:
         """
-        Builds an ActivateField object with the specified arguments and resolver.
+        Builds an ModelActivateField object with the specified arguments and resolver.
 
         Args:
-            resolve (Callable): The resolver function for the ActivateField.
-            modify_where_argument (str, optional): The modify where argument. Defaults to None.
-            extra_arguments (dict, optional): Extra arguments for the ActivateField. Defaults to None.
-            **extra_pre_post_resolvers: Additional pre and post resolvers for the ActivateField.
+            resolve (Callable): The resolver function for the ModelActivateField.
+            extra_arguments (dict, optional): Extra arguments for the ModelActivateField. Defaults to None.
+            **extra_pre_post_resolvers: Additional pre and post resolvers for the ModelActivateField.
 
         Returns:
-            ActivateField: The built ActivateField object.
+            ModelActivateField: The built ModelActivateField object.
 
         """
-
-        where_arg = self.get_where_arg(modify_where_argument, True)
         extra_arguments = extra_arguments or {}
-
         name_function = "mutate"
-        resolver = self.wrap_resolver_with_pre_post_resolvers(resolve, extra_pre_post_resolvers, name_function)
-        # TODa: field_for_activate_deactivate
-
-        activate_field = ActivateField(
-            model_object_type=self.model_as_object_type,
-            plural_model_name=self.model_name_in_different_case["plural_pascal_case"],
-            args={**where_arg, **extra_arguments},
-            resolver=resolver
+        resolver = self.wrap_resolver_with_pre_post_resolvers(
+            resolve, extra_pre_post_resolvers, name_function
         )
-        return activate_field
+        return ModelActivateField(
+            plural_model_name=self.model_name_in_different_case["plural_pascal_case"],
+            model=self.model,
+            registry=self.registry,
+            state_controller_field=field_for_activate_deactivate,
+            resolver=resolver,
+            **extra_arguments,
+        )
 
 
 class ListBuilder(BaseCruddals):
@@ -796,7 +746,12 @@ class ListBuilder(BaseCruddals):
         """
         self.validate_attrs(props, "override_total_list", "List", name)
 
-    def build_list(self, resolve: Callable[..., Any], extra_arguments=None, **extra_pre_post_resolvers) -> ListField:
+    def build_list(
+        self,
+        resolve: Callable[..., Any],
+        extra_arguments=None,
+        **extra_pre_post_resolvers,
+    ) -> ModelListField:
         """
         Builds a list field for GraphQL queries.
 
@@ -809,17 +764,17 @@ class ListBuilder(BaseCruddals):
             The built list field.
         """
         extra_arguments = extra_arguments or {}
-
         name_function = "resolve"
-        resolver = self.wrap_resolver_with_pre_post_resolvers(resolve, extra_pre_post_resolvers, name_function)
-
-        list_field = ListField(
-            model_object_type=self.model_as_object_type,
-            plural_model_name=self.model_name_in_different_case["plural_pascal_case"],
-            args=extra_arguments,
-            resolver=resolver
+        resolver = self.wrap_resolver_with_pre_post_resolvers(
+            resolve, extra_pre_post_resolvers, name_function
         )
-        return list_field
+        return ModelListField(
+            plural_model_name=self.model_name_in_different_case["plural_pascal_case"],
+            model=self.model,
+            registry=self.registry,
+            resolver=resolver,
+            **extra_arguments,
+        )
 
 
 class SearchBuilder(BaseCruddals):
@@ -832,7 +787,12 @@ class SearchBuilder(BaseCruddals):
     def validate_props_search_field(self, props, name=None):
         self.validate_attrs(props, "override_total_search", "Search", name)
 
-    def build_search(self, resolve:Callable[..., Any], modify_where_argument:Union[ModifyArgument, Dict, None]=None, modify_order_by_argument:Union[ModifyArgument, Dict, None]=None, modify_pagination_config_argument:Union[ModifyArgument, Dict, None]=None, extra_arguments:Union[Dict[str, GRAPHENE_TYPE], None]=None, **extra_pre_post_resolvers) -> SearchField:
+    def build_search(
+        self,
+        resolve: Callable[..., Any],
+        extra_arguments: Union[Dict[str, GRAPHENE_TYPE], None] = None,
+        **extra_pre_post_resolvers,
+    ) -> ModelSearchField:
         """
         Builds a search field for a GraphQL API.
 
@@ -845,27 +805,33 @@ class SearchBuilder(BaseCruddals):
             **extra_pre_post_resolvers: Extra pre and post resolvers to include in the search field.
 
         Returns:
-            A SearchField object representing the search field.
+            A ModelSearchField object representing the search field.
 
         """
-        where_arg = self.get_where_arg(modify_where_argument, False)
-        order_by_arg = self.get_order_by_arg(modify_order_by_argument)
-        pagination_config_arg = self.get_pagination_config_arg(modify_pagination_config_argument)
         extra_arguments = extra_arguments or {}
-
         name_function = "resolve"
-        resolver = self.wrap_resolver_with_pre_post_resolvers( resolve, extra_pre_post_resolvers, name_function )
-
-        search_field = SearchField(
-            model_as_paginated_object_type=self.model_as_paginated_object_type,
-            plural_model_name=self.model_name_in_different_case["plural_pascal_case"],
-            args={**where_arg, **order_by_arg, **pagination_config_arg, **extra_arguments},
-            resolver=resolver
+        resolver = self.wrap_resolver_with_pre_post_resolvers(
+            resolve, extra_pre_post_resolvers, name_function
         )
-        return search_field
+        return ModelSearchField(
+            plural_model_name=self.model_name_in_different_case["plural_pascal_case"],
+            model=self.model,
+            registry=self.registry,
+            resolver=resolver,
+            **extra_arguments,
+        )
 
 
-class BuilderCruddalsModel( CreateBuilder, ReadBuilder, UpdateBuilder, DeleteBuilder, DeactivateBuilder, ActivateBuilder, ListBuilder, SearchBuilder, ):
+class BuilderCruddalsModel(
+    CreateBuilder,
+    ReadBuilder,
+    UpdateBuilder,
+    DeleteBuilder,
+    DeactivateBuilder,
+    ActivateBuilder,
+    ListBuilder,
+    SearchBuilder,
+):
     """
     A class that represents a builder for creating CRUD operations for a specific model.
 
@@ -894,6 +860,7 @@ class BuilderCruddalsModel( CreateBuilder, ReadBuilder, UpdateBuilder, DeleteBui
         deactivate_field: The deactivate operation field.
         delete_field: The delete operation field.
     """
+
     def __init__(self, config: CruddalsBuilderConfig) -> None:
         """
         Initializes a new instance of the BuilderCruddalsModel class.
@@ -929,7 +896,7 @@ class BuilderCruddalsModel( CreateBuilder, ReadBuilder, UpdateBuilder, DeleteBui
             self.registry = get_global_registry(f"{config.prefix}{config.suffix}")
         else:
             self.registry = config.registry
-        
+
         if not config.plural_pascal_case_name:
             config.plural_pascal_case_name = f"{config.pascal_case_name}s"
 
@@ -937,102 +904,71 @@ class BuilderCruddalsModel( CreateBuilder, ReadBuilder, UpdateBuilder, DeleteBui
         self.prefix = config.prefix
         self.suffix = config.suffix
         self.cruddals_config = config
-        self.model_name_in_different_case = get_name_of_model_in_different_case(name_model=config.pascal_case_name, name_model_plural=config.plural_pascal_case_name, prefix=config.prefix, suffix=config.suffix)
+        self.model_name_in_different_case = get_name_of_model_in_different_case(
+            name_model=config.pascal_case_name,
+            name_model_plural=config.plural_pascal_case_name,
+            prefix=config.prefix,
+            suffix=config.suffix,
+        )
 
-        assert isinstance( config.interfaces, (tuple,) ), f"'interfaces' should be tuple received {type(config.interfaces)}"
-        assert isinstance( config.exclude_interfaces, (tuple,) ), f"'exclude_interfaces' should be tuple received {type(config.exclude_interfaces)}"
+        assert isinstance(
+            config.interfaces, (tuple,)
+        ), f"'interfaces' should be tuple received {type(config.interfaces)}"
+        assert isinstance(
+            config.exclude_interfaces, (tuple,)
+        ), f"'exclude_interfaces' should be tuple received {type(config.exclude_interfaces)}"
 
-        dict_of_interface_attr = self.get_dict_of_interface_attr( config.interfaces, config.exclude_interfaces )
+        dict_of_interface_attr = self.get_dict_of_interface_attr(
+            config.interfaces, config.exclude_interfaces
+        )
 
         self.model_as_object_type = self._get_model_object_type(dict_of_interface_attr)
         self.model_as_paginated_object_type = self._get_model_paginated_object_type()
-        self.model_as_input_object_type = self._get_model_input_object_type(dict_of_interface_attr)
-        self.model_as_create_input_object_type = self._get_model_create_input_object_type(dict_of_interface_attr)
-        self.model_as_update_input_object_type = self._get_model_update_input_object_type(dict_of_interface_attr)
-        self.model_as_filter_input_object_type = self._get_model_filter_input_object_type(dict_of_interface_attr)
-        self.model_as_order_by_input_object_type = self._get_model_order_by_input_object_type(dict_of_interface_attr)
-
-
-        create_operation_field = self.build_create(
-            resolve=config.create_resolver,
-            modify_input_argument=dict_of_interface_attr.get(CruddalsInterfaceNames.CREATE_FIELD.value, {}).pop("modify_input_argument", None),
-            extra_arguments=dict_of_interface_attr.get(CruddalsInterfaceNames.CREATE_FIELD.value, {}).pop("extra_arguments", None),
-            **dict_of_interface_attr.get(CruddalsInterfaceNames.CREATE_FIELD.value, {})
+        self.model_as_input_object_type = self._get_model_input_object_type(
+            dict_of_interface_attr
         )
-        setattr(self, "create_field", create_operation_field)
-
-        read_operation_field = self.build_read(
-            resolve=config.read_resolver,
-            modify_where_argument=dict_of_interface_attr.get(CruddalsInterfaceNames.READ_FIELD.value, {}).pop("modify_where_argument", None),
-            extra_arguments=dict_of_interface_attr.get(CruddalsInterfaceNames.READ_FIELD.value, {}).pop("extra_arguments", None),
-            **dict_of_interface_attr.get(CruddalsInterfaceNames.READ_FIELD.value, {})
+        self.model_as_create_input_object_type = (
+            self._get_model_create_input_object_type(dict_of_interface_attr)
         )
-        setattr(self, "read_field", read_operation_field)
-
-        update_operation_field = self.build_update(
-            resolve=config.update_resolver,
-            modify_input_argument=dict_of_interface_attr.get(CruddalsInterfaceNames.UPDATE_FIELD.value, {}).pop("modify_input_argument", None),
-            extra_arguments=dict_of_interface_attr.get(CruddalsInterfaceNames.UPDATE_FIELD.value, {}).pop("extra_arguments", None),
-            **dict_of_interface_attr.get(CruddalsInterfaceNames.UPDATE_FIELD.value, {})
+        self.model_as_update_input_object_type = (
+            self._get_model_update_input_object_type(dict_of_interface_attr)
         )
-        setattr(self, "update_field", update_operation_field)
-
-        delete_operation_field = self.build_delete(
-            resolve=config.delete_resolver,
-            modify_where_argument=dict_of_interface_attr.get(CruddalsInterfaceNames.DELETE_FIELD.value, {}).pop("modify_where_argument", None),
-            extra_arguments=dict_of_interface_attr.get(CruddalsInterfaceNames.DELETE_FIELD.value, {}).pop("extra_arguments", None),
-            **dict_of_interface_attr.get(CruddalsInterfaceNames.DELETE_FIELD.value, {})
+        self.model_as_filter_input_object_type = (
+            self._get_model_filter_input_object_type(dict_of_interface_attr)
         )
-        setattr(self, "delete_field", delete_operation_field)
-
-        deactivate_operation_field = self.build_deactivate(
-            resolve=config.deactivate_resolver,
-            modify_where_argument=dict_of_interface_attr.get(CruddalsInterfaceNames.DEACTIVATE_FIELD.value, {}).pop("modify_where_argument", None),
-            extra_arguments=dict_of_interface_attr.get(CruddalsInterfaceNames.DEACTIVATE_FIELD.value, {}).pop("extra_arguments", None),
-            **dict_of_interface_attr.get(CruddalsInterfaceNames.DEACTIVATE_FIELD.value, {})
+        self.model_as_order_by_input_object_type = (
+            self._get_model_order_by_input_object_type(dict_of_interface_attr)
         )
-        setattr(self, "deactivate_field", deactivate_operation_field)
 
-        activate_operation_field = self.build_activate(
-            resolve=config.activate_resolver,
-            modify_where_argument=dict_of_interface_attr.get(CruddalsInterfaceNames.ACTIVATE_FIELD.value, {}).pop("modify_where_argument", None),
-            extra_arguments=dict_of_interface_attr.get(CruddalsInterfaceNames.ACTIVATE_FIELD.value, {}).pop("extra_arguments", None),
-            **dict_of_interface_attr.get(CruddalsInterfaceNames.ACTIVATE_FIELD.value, {})
+        self.create_field = self._build_create_field(config, dict_of_interface_attr)
+        self.read_field = self._build_read_field(config, dict_of_interface_attr)
+        self.update_field = self._build_update_field(config, dict_of_interface_attr)
+        self.delete_field = self._build_delete_field(config, dict_of_interface_attr)
+        self.deactivate_field = self._build_deactivate_field(
+            config, dict_of_interface_attr
         )
-        setattr(self, "activate_field", activate_operation_field)
+        self.activate_field = self._build_activate_field(config, dict_of_interface_attr)
+        self.list_field = self._build_list_field(config, dict_of_interface_attr)
+        self.search_field = self._build_search_field(config, dict_of_interface_attr)
 
-        list_operation_field = self.build_list(
-            resolve=config.list_resolver,
-            modify_input_argument=dict_of_interface_attr.get(CruddalsInterfaceNames.LIST_FIELD.value, {}).pop("modify_input_argument", None),
-            extra_arguments=dict_of_interface_attr.get(CruddalsInterfaceNames.LIST_FIELD.value, {}).pop("extra_arguments", None),
-            **dict_of_interface_attr.get(CruddalsInterfaceNames.LIST_FIELD.value, {})
-        )
-        setattr(self, "list_field", list_operation_field)
-
-        search_operation_field = self.build_search(
-            resolve=config.search_resolver,
-            modify_where_argument=dict_of_interface_attr.get(CruddalsInterfaceNames.SEARCH_FIELD.value, {}).pop("modify_where_argument", None),
-            modify_order_by_argument=dict_of_interface_attr.get(CruddalsInterfaceNames.SEARCH_FIELD.value, {}).pop("modify_order_by_argument", None),
-            modify_pagination_config_argument=dict_of_interface_attr.get(CruddalsInterfaceNames.SEARCH_FIELD.value, {}).pop("modify_pagination_config_argument", None),
-            extra_arguments=dict_of_interface_attr.get(CruddalsInterfaceNames.SEARCH_FIELD.value, {}).pop("extra_arguments", None),
-            **dict_of_interface_attr.get(CruddalsInterfaceNames.SEARCH_FIELD.value, {})
-        )
-        setattr(self, "search_field", search_operation_field)
-
-
-    def _get_model_object_type(self, dict_of_interface_attr) -> Type[graphene.ObjectType]:
-        return convert_model_to_object_type(
+    def _get_model_object_type(
+        self, dict_of_interface_attr
+    ) -> Type[graphene.ObjectType]:
+        return convert_model_to_model_object_type(
             model=self.model,
             pascal_case_name=self.model_name_in_different_case["pascal_case"],
             registry=self.registry,
             field_converter_function=self.cruddals_config.output_field_converter_function,
-            meta_attrs=dict_of_interface_attr.pop(MetaCruddalsInterfaceNames.META_OBJECT_TYPE.value, None),
-            extra_fields=dict_of_interface_attr.pop(CruddalsInterfaceNames.OBJECT_TYPE.value, None),
+            meta_attrs=dict_of_interface_attr.pop(
+                MetaCruddalsInterfaceNames.META_OBJECT_TYPE.value, None
+            ),
+            extra_fields=dict_of_interface_attr.pop(
+                CruddalsInterfaceNames.OBJECT_TYPE.value, None
+            ),
         )
 
-
     def _get_model_paginated_object_type(self) -> Type[graphene.ObjectType]:
-        return convert_model_to_paginated_object_type(
+        return convert_model_to_model_paginated_object_type(
             model=self.model,
             pascal_case_name=self.model_name_in_different_case["pascal_case"],
             registry=self.registry,
@@ -1040,66 +976,186 @@ class BuilderCruddalsModel( CreateBuilder, ReadBuilder, UpdateBuilder, DeleteBui
             extra_fields=None,
         )
 
-
-    def _get_model_input_object_type(self, dict_of_interface_attr) -> Type[graphene.InputObjectType]:
-        return convert_model_to_mutate_input_object_type(
+    def _get_model_input_object_type(
+        self, dict_of_interface_attr
+    ) -> Type[graphene.InputObjectType]:
+        return convert_model_to_model_mutate_input_object_type(
             model=self.model,
             pascal_case_name=self.model_name_in_different_case["pascal_case"],
             registry=self.registry,
             field_converter_function=self.cruddals_config.input_field_converter_function,
             type_mutation=TypesMutationEnum.CREATE_UPDATE.value,
-            meta_attrs=dict_of_interface_attr.pop(MetaCruddalsInterfaceNames.META_INPUT_OBJECT_TYPE.value, None),
-            extra_fields=dict_of_interface_attr.pop(CruddalsInterfaceNames.INPUT_OBJECT_TYPE.value, None),
+            meta_attrs=dict_of_interface_attr.pop(
+                MetaCruddalsInterfaceNames.META_INPUT_OBJECT_TYPE.value, None
+            ),
+            extra_fields=dict_of_interface_attr.pop(
+                CruddalsInterfaceNames.INPUT_OBJECT_TYPE.value, None
+            ),
         )
 
-
-    def _get_model_create_input_object_type(self, dict_of_interface_attr) -> Type[graphene.InputObjectType]:
-        return convert_model_to_mutate_input_object_type(
+    def _get_model_create_input_object_type(
+        self, dict_of_interface_attr
+    ) -> Type[graphene.InputObjectType]:
+        return convert_model_to_model_mutate_input_object_type(
             model=self.model,
             pascal_case_name=self.model_name_in_different_case["pascal_case"],
             registry=self.registry,
             field_converter_function=self.cruddals_config.create_input_field_converter_function,
             type_mutation=TypesMutationEnum.CREATE.value,
-            meta_attrs=dict_of_interface_attr.pop(MetaCruddalsInterfaceNames.META_CREATE_INPUT_OBJECT_TYPE.value, None),
-            extra_fields=dict_of_interface_attr.pop(CruddalsInterfaceNames.CREATE_INPUT_OBJECT_TYPE.value, None),
+            meta_attrs=dict_of_interface_attr.pop(
+                MetaCruddalsInterfaceNames.META_CREATE_INPUT_OBJECT_TYPE.value, None
+            ),
+            extra_fields=dict_of_interface_attr.pop(
+                CruddalsInterfaceNames.CREATE_INPUT_OBJECT_TYPE.value, None
+            ),
         )
 
-
-    def _get_model_update_input_object_type(self, dict_of_interface_attr) -> Type[graphene.InputObjectType]:
-        return convert_model_to_mutate_input_object_type(
+    def _get_model_update_input_object_type(
+        self, dict_of_interface_attr
+    ) -> Type[graphene.InputObjectType]:
+        return convert_model_to_model_mutate_input_object_type(
             model=self.model,
             pascal_case_name=self.model_name_in_different_case["pascal_case"],
             registry=self.registry,
             field_converter_function=self.cruddals_config.update_input_field_converter_function,
             type_mutation=TypesMutationEnum.UPDATE.value,
-            meta_attrs=dict_of_interface_attr.pop(MetaCruddalsInterfaceNames.META_UPDATE_INPUT_OBJECT_TYPE.value, None),
-            extra_fields=dict_of_interface_attr.pop(CruddalsInterfaceNames.UPDATE_INPUT_OBJECT_TYPE.value, None),
+            meta_attrs=dict_of_interface_attr.pop(
+                MetaCruddalsInterfaceNames.META_UPDATE_INPUT_OBJECT_TYPE.value, None
+            ),
+            extra_fields=dict_of_interface_attr.pop(
+                CruddalsInterfaceNames.UPDATE_INPUT_OBJECT_TYPE.value, None
+            ),
         )
 
-
-    def _get_model_filter_input_object_type(self, dict_of_interface_attr) -> Type[graphene.InputObjectType]:
-        return convert_model_to_filter_input_object_type(
+    def _get_model_filter_input_object_type(
+        self, dict_of_interface_attr
+    ) -> Type[graphene.InputObjectType]:
+        return convert_model_to_model_filter_input_object_type(
             model=self.model,
             pascal_case_name=self.model_name_in_different_case["pascal_case"],
             registry=self.registry,
             field_converter_function=self.cruddals_config.filter_field_converter_function,
-            meta_attrs=dict_of_interface_attr.pop(MetaCruddalsInterfaceNames.META_FILTER_INPUT_OBJECT_TYPE.value, None),
-            extra_fields=dict_of_interface_attr.pop(CruddalsInterfaceNames.FILTER_INPUT_OBJECT_TYPE.value, None),
+            meta_attrs=dict_of_interface_attr.pop(
+                MetaCruddalsInterfaceNames.META_FILTER_INPUT_OBJECT_TYPE.value, None
+            ),
+            extra_fields=dict_of_interface_attr.pop(
+                CruddalsInterfaceNames.FILTER_INPUT_OBJECT_TYPE.value, None
+            ),
         )
 
-
-    def _get_model_order_by_input_object_type(self, dict_of_interface_attr) -> Type[graphene.InputObjectType]:
-        return convert_model_to_order_by_input_object_type(
+    def _get_model_order_by_input_object_type(
+        self, dict_of_interface_attr
+    ) -> Type[graphene.InputObjectType]:
+        return convert_model_to_model_order_by_input_object_type(
             model=self.model,
             pascal_case_name=self.model_name_in_different_case["pascal_case"],
             registry=self.registry,
             field_converter_function=self.cruddals_config.order_by_field_converter_function,
-            meta_attrs=dict_of_interface_attr.pop(MetaCruddalsInterfaceNames.META_ORDER_BY_INPUT_OBJECT_TYPE.value, None),
-            extra_fields=dict_of_interface_attr.pop(CruddalsInterfaceNames.ORDER_BY_INPUT_OBJECT_TYPE.value, None),
+            meta_attrs=dict_of_interface_attr.pop(
+                MetaCruddalsInterfaceNames.META_ORDER_BY_INPUT_OBJECT_TYPE.value, None
+            ),
+            extra_fields=dict_of_interface_attr.pop(
+                CruddalsInterfaceNames.ORDER_BY_INPUT_OBJECT_TYPE.value, None
+            ),
         )
 
+    def _build_create_field(
+        self, config: CruddalsBuilderConfig, dict_of_interface_attr
+    ) -> ModelCreateUpdateField:
+        return self.build_create(
+            resolve=config.create_resolver,
+            extra_arguments=dict_of_interface_attr.get(
+                CruddalsInterfaceNames.CREATE_FIELD.value, {}
+            ).pop("extra_arguments", None),
+            **dict_of_interface_attr.get(CruddalsInterfaceNames.CREATE_FIELD.value, {}),
+        )
 
-    def get_dict_of_interface_attr(self, interfaces: Union[tuple[Type[Any], ...], None] = None, exclude_interfaces: Union[Tuple[str, ...], None] = None ) -> Dict[str, OrderedDict[str, Any]]:
+    def _build_read_field(
+        self, config: CruddalsBuilderConfig, dict_of_interface_attr
+    ) -> ModelReadField:
+        return self.build_read(
+            resolve=config.read_resolver,
+            extra_arguments=dict_of_interface_attr.get(
+                CruddalsInterfaceNames.READ_FIELD.value, {}
+            ).pop("extra_arguments", None),
+            **dict_of_interface_attr.get(CruddalsInterfaceNames.READ_FIELD.value, {}),
+        )
+
+    def _build_update_field(
+        self, config: CruddalsBuilderConfig, dict_of_interface_attr
+    ) -> ModelCreateUpdateField:
+        return self.build_update(
+            resolve=config.update_resolver,
+            extra_arguments=dict_of_interface_attr.get(
+                CruddalsInterfaceNames.UPDATE_FIELD.value, {}
+            ).pop("extra_arguments", None),
+            **dict_of_interface_attr.get(CruddalsInterfaceNames.UPDATE_FIELD.value, {}),
+        )
+
+    def _build_delete_field(
+        self, config: CruddalsBuilderConfig, dict_of_interface_attr
+    ) -> ModelDeleteField:
+        return self.build_delete(
+            resolve=config.delete_resolver,
+            extra_arguments=dict_of_interface_attr.get(
+                CruddalsInterfaceNames.DELETE_FIELD.value, {}
+            ).pop("extra_arguments", None),
+            **dict_of_interface_attr.get(CruddalsInterfaceNames.DELETE_FIELD.value, {}),
+        )
+
+    def _build_deactivate_field(
+        self, config: CruddalsBuilderConfig, dict_of_interface_attr
+    ) -> ModelDeactivateField:
+        return self.build_deactivate(
+            resolve=config.deactivate_resolver,
+            extra_arguments=dict_of_interface_attr.get(
+                CruddalsInterfaceNames.DEACTIVATE_FIELD.value, {}
+            ).pop("extra_arguments", None),
+            **dict_of_interface_attr.get(
+                CruddalsInterfaceNames.DEACTIVATE_FIELD.value, {}
+            ),
+        )
+
+    def _build_activate_field(
+        self, config: CruddalsBuilderConfig, dict_of_interface_attr
+    ) -> ModelActivateField:
+        return self.build_activate(
+            resolve=config.activate_resolver,
+            extra_arguments=dict_of_interface_attr.get(
+                CruddalsInterfaceNames.ACTIVATE_FIELD.value, {}
+            ).pop("extra_arguments", None),
+            **dict_of_interface_attr.get(
+                CruddalsInterfaceNames.ACTIVATE_FIELD.value, {}
+            ),
+        )
+
+    def _build_list_field(
+        self, config: CruddalsBuilderConfig, dict_of_interface_attr
+    ) -> ModelListField:
+        return self.build_list(
+            resolve=config.list_resolver,
+            extra_arguments=dict_of_interface_attr.get(
+                CruddalsInterfaceNames.LIST_FIELD.value, {}
+            ).pop("extra_arguments", None),
+            **dict_of_interface_attr.get(CruddalsInterfaceNames.LIST_FIELD.value, {}),
+        )
+
+    def _build_search_field(
+        self, config: CruddalsBuilderConfig, dict_of_interface_attr
+    ) -> ModelSearchField:
+        return self.build_search(
+            resolve=config.search_resolver,
+            extra_arguments=dict_of_interface_attr.get(
+                CruddalsInterfaceNames.SEARCH_FIELD.value, {}
+            ).pop("extra_arguments", None),
+            **dict_of_interface_attr.get(CruddalsInterfaceNames.SEARCH_FIELD.value, {}),
+        )
+
+    def get_dict_of_interface_attr(
+        self,
+        interfaces: Union[tuple[Type[Any], ...], None] = None,
+        exclude_interfaces: Union[Tuple[str, ...], None] = None,
+    ) -> Dict[str, OrderedDict[str, Any]]:
         if not interfaces:
             return {}
         exclude_interfaces = exclude_interfaces or ()
@@ -1136,19 +1192,19 @@ class BuilderCruddalsModel( CreateBuilder, ReadBuilder, UpdateBuilder, DeleteBui
                     )
                     dict_of_interface_attr[f"Meta{interface_type_name}"] = OrderedDict(
                         merge_dict(
-                        destination=dict_of_interface_attr[
-                            f"Meta{interface_type_name}"
-                        ],
-                        source=interface_meta_attrs,
-                        keep_both=True,
-                    )
+                            destination=dict_of_interface_attr[
+                                f"Meta{interface_type_name}"
+                            ],
+                            source=interface_meta_attrs,
+                            keep_both=True,
+                        )
                     )
                 dict_of_interface_attr[interface_type_name] = OrderedDict(
                     merge_dict(
-                    destination=dict_of_interface_attr[interface_type_name],
-                    source=interface_attrs,
-                    keep_both=True,
-                )
+                        destination=dict_of_interface_attr[interface_type_name],
+                        source=interface_attrs,
+                        keep_both=True,
+                    )
                 )
 
         return dict_of_interface_attr
@@ -1162,9 +1218,9 @@ class CruddalsModel(SubclassWithMeta):
         Query (Type[graphene.ObjectType]): The query object type.
         Mutation (Union[Type[graphene.ObjectType], None]): The mutation object type.
         schema (graphene.Schema): The GraphQL schema.
-        operation_fields_for_queries (Dict[str, Union[graphene.Field, ReadField, ListField, SearchField]]):
+        operation_fields_for_queries (Dict[str, Union[graphene.Field, ModelReadField, ModelListField, ModelSearchField]]):
             The operation fields for queries.
-        operation_fields_for_mutations (Union[Dict[str, Union[graphene.Field, CreateUpdateField, DeleteField, DeactivateField, ActivateField]], None]]):
+        operation_fields_for_mutations (Union[Dict[str, Union[graphene.Field, ModelCreateUpdateField, ModelDeleteField, ModelDeactivateField, ModelActivateField]], None]]):
             The operation fields for mutations.
         meta (BuilderCruddalsModel): The metadata for the CRUDDALS model.
 
@@ -1181,16 +1237,16 @@ class CruddalsModel(SubclassWithMeta):
     Mutation: Union[Type[graphene.ObjectType], None] = None
     schema: graphene.Schema
     operation_fields_for_queries: Dict[
-        str, graphene.Field | ReadField | ListField | SearchField
+        str, graphene.Field | ModelReadField | ModelListField | ModelSearchField
     ]
     operation_fields_for_mutations: Union[
         Dict[
             str,
             graphene.Field
-            | CreateUpdateField
-            | DeleteField
-            | DeactivateField
-            | ActivateField,
+            | ModelCreateUpdateField
+            | ModelDeleteField
+            | ModelDeactivateField
+            | ModelActivateField,
         ],
         None,
     ] = None
@@ -1210,17 +1266,19 @@ class CruddalsModel(SubclassWithMeta):
             functions = ()
         if not exclude_functions:
             exclude_functions = ()
-        
+
         validate_list_func_cruddals(functions, exclude_functions)
 
         if not config.registry:
             config.registry = get_global_registry(f"{config.prefix}{config.suffix}")
 
         cls._initialize_attributes()
-        cls._build_cruddals_model( config )
+        cls._build_cruddals_model(config)
         cls._build_dict_for_operation_fields(functions, exclude_functions)
         cls._build_schema_query_mutation()
-        config.registry.register_model(config.model, TypeRegistryForModelEnum.CRUDDALS.value, cls)
+        config.registry.register_model(
+            config.model, TypeRegistryForModelEnum.CRUDDALS.value, cls
+        )
 
         super().__init_subclass_with_meta__(**kwargs)
 
@@ -1237,17 +1295,30 @@ class CruddalsModel(SubclassWithMeta):
         [setattr(cls, attr, None) for attr in attrs_for_child]
 
     @classmethod
-    def _build_cruddals_model( cls, config ):
-        cruddals_of_model = BuilderCruddalsModel( config )
+    def _build_cruddals_model(cls, config):
+        cruddals_of_model = BuilderCruddalsModel(config)
         cls.meta = cruddals_of_model
 
     @classmethod
     def _build_dict_for_operation_fields(cls, functions, exclude_functions):
         functions_type_query = ("read", "list", "search")
-        functions_type_mutation = ( "create", "update", "activate", "deactivate", "delete", )
-        final_functions = ( functions if functions else tuple( set(functions_type_query + functions_type_mutation) - set(exclude_functions) ) )
+        functions_type_mutation = (
+            "create",
+            "update",
+            "activate",
+            "deactivate",
+            "delete",
+        )
+        final_functions = (
+            functions
+            if functions
+            else tuple(
+                set(functions_type_query + functions_type_mutation)
+                - set(exclude_functions)
+            )
+        )
 
-        if not any( function in functions_type_query for function in final_functions ):
+        if not any(function in functions_type_query for function in final_functions):
             raise ValueError(
                 f"Expected at least one of these values {functions_type_query} in 'functions', but got {final_functions}"
             )
@@ -1261,7 +1332,9 @@ class CruddalsModel(SubclassWithMeta):
                 key = (
                     f"{function}_{cls.meta.model_name_in_different_case['snake_case']}"
                 )
-            attr_field: Dict[str, graphene.Field] = { key: getattr(cls.meta, f"{function}_field") }
+            attr_field: Dict[str, graphene.Field] = {
+                key: getattr(cls.meta, f"{function}_field")
+            }
             if function in functions_type_query:
                 cls.operation_fields_for_queries.update(attr_field)
             elif function in functions_type_mutation:

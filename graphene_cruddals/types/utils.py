@@ -1,13 +1,47 @@
 import graphene
-from typing import Any, Dict, Literal, OrderedDict, Type, Callable, List, Union, Any, Callable
-from graphene_cruddals.operation_fields.main import ListField, PaginationInterface
-from graphene_cruddals.utils.main import build_class, exists_conversion_for_model, get_converted_model
-from graphene_cruddals.utils.typing.custom_typing import GRAPHENE_TYPE, MetaAttrs, TypesMutation, TypesMutationEnum, TypeRegistryForModelEnum
-from graphene_cruddals.registry.registry_global import RegistryGlobal, get_global_registry
+from typing import (
+    Any,
+    Dict,
+    Literal,
+    OrderedDict,
+    Type,
+    Callable,
+    List,
+    Union,
+    Any,
+    Callable,
+)
+from graphene_cruddals.operation_fields.main import ModelListField, PaginationInterface
+from graphene_cruddals.utils.main import (
+    build_class,
+    exists_conversion_for_model,
+    get_converted_model,
+)
+from graphene_cruddals.utils.typing.custom_typing import (
+    GRAPHENE_TYPE,
+    MetaAttrs,
+    TypesMutation,
+    TypesMutationEnum,
+    TypeRegistryForModelEnum,
+)
+from graphene_cruddals.registry.registry_global import (
+    RegistryGlobal,
+    get_global_registry,
+)
+from graphene_cruddals.types.main import (
+    ModelObjectType,
+    ModelPaginatedObjectType,
+    ModelInputObjectType,
+    ModelSearchInputObjectType,
+    ModelOrderByInputObjectType,
+)
 
 
-
-def get_final_exclude_fields(meta_attrs: Union[Dict[str, List[str]], OrderedDict[str, List[str]], MetaAttrs, None] = None,) -> Union[List[str], None]:
+def get_final_exclude_fields(
+    meta_attrs: Union[
+        Dict[str, List[str]], OrderedDict[str, List[str]], MetaAttrs, None
+    ] = None,
+) -> Union[List[str], None]:
     """
     Determines the fields to exclude based on metadata attributes.
 
@@ -22,7 +56,10 @@ def get_final_exclude_fields(meta_attrs: Union[Dict[str, List[str]], OrderedDict
     return None
 
 
-def get_final_fields(model: Dict[str, Any], meta_attrs: Union[OrderedDict[str, Any], MetaAttrs, None] = None,) -> Union[List[str], Literal["__all__"]]:
+def get_final_fields(
+    model: Dict[str, Any],
+    meta_attrs: Union[OrderedDict[str, Any], MetaAttrs, None] = None,
+) -> Union[List[str], Literal["__all__"]]:
     """
     Determines the final set of model fields to include based on inclusion and exclusion criteria.
 
@@ -40,7 +77,9 @@ def get_final_fields(model: Dict[str, Any], meta_attrs: Union[OrderedDict[str, A
         elif meta_attrs.get("fields"):
             final_fields = meta_attrs.get("fields")
         elif final_exclude_fields:
-            final_fields = [field for field in final_fields if field not in final_exclude_fields]
+            final_fields = [
+                field for field in final_fields if field not in final_exclude_fields
+            ]
     return final_fields or []
 
 
@@ -65,14 +104,14 @@ def get_converted_fields(
     return converted_fields
 
 
-def convert_model_to_object_type(
+def convert_model_to_model_object_type(
     model: Dict[str, Any],
-    pascal_case_name:str,
+    pascal_case_name: str,
     registry: RegistryGlobal,
     field_converter_function: Callable[[Any], GRAPHENE_TYPE],
     meta_attrs: Union[OrderedDict[str, Any], MetaAttrs, None] = None,
-    extra_fields:Union[Dict[str, GRAPHENE_TYPE], None] = None
-) -> Type[graphene.ObjectType]:
+    extra_fields: Union[Dict[str, GRAPHENE_TYPE], None] = None,
+) -> Type[ModelObjectType]:
     """
     Converts a model into a GraphQL ObjectType, registering it with a global registry.
 
@@ -85,7 +124,7 @@ def convert_model_to_object_type(
     :return: The constructed ObjectType.
     """
     if not model:
-        raise ValueError("Model is empty in convert_model_to_object_type")
+        raise ValueError("Model is empty in convert_model_to_model_object_type")
     if exists_conversion_for_model(
         model, registry, TypeRegistryForModelEnum.OBJECT_TYPE.value
     ):
@@ -93,32 +132,51 @@ def convert_model_to_object_type(
             model, registry, TypeRegistryForModelEnum.OBJECT_TYPE.value
         )
     if not pascal_case_name:
-        raise ValueError("Name is empty in convert_model_to_object_type")
+        raise ValueError("Name is empty in convert_model_to_model_object_type")
     if not field_converter_function:
-        raise ValueError("Field converter function is empty in convert_model_to_object_type")
+        raise ValueError(
+            "Field converter function is empty in convert_model_to_model_object_type"
+        )
     if not callable(field_converter_function):
-        raise ValueError("Field converter function is not callable in convert_model_to_object_type")
+        raise ValueError(
+            "Field converter function is not callable in convert_model_to_model_object_type"
+        )
     if not registry:
         registry = get_global_registry()
     if not extra_fields:
         extra_fields = {}
-    converted_fields = get_converted_fields(model, field_converter_function, meta_attrs)
+    if not meta_attrs:
+        meta_attrs = {'only_fields': '__all__', 'exclude_fields': []}
+
+
+    
+    class_meta_type = build_class(
+        name="Meta",
+        attrs={
+            "model": model, 
+            "field_converter_function": field_converter_function,
+            "registry": registry,
+            **meta_attrs,
+        },
+    )
     class_model_object_type = build_class(
         name=f"{pascal_case_name}Type",
-        bases=(graphene.ObjectType,),
-        attrs={**converted_fields, **extra_fields}
+        bases=(ModelObjectType,),
+        attrs={
+            "Meta": class_meta_type,
+            **extra_fields,
+        },
     )
-    registry.register_model(model, TypeRegistryForModelEnum.OBJECT_TYPE.value, class_model_object_type)
     return class_model_object_type
 
 
-def convert_model_to_paginated_object_type(
+def convert_model_to_model_paginated_object_type(
     model: Dict[str, Any],
-    pascal_case_name:str,
+    pascal_case_name: str,
     registry: RegistryGlobal,
     model_object_type: Type[graphene.ObjectType],
-    extra_fields:Union[Dict[str, GRAPHENE_TYPE], None] = None
-) -> Type[graphene.ObjectType]:
+    extra_fields: Union[Dict[str, GRAPHENE_TYPE], None] = None,
+) -> Type[ModelPaginatedObjectType]:
     """
     Converts a model into a paginated GraphQL ObjectType, extending an existing ObjectType.
 
@@ -130,7 +188,9 @@ def convert_model_to_paginated_object_type(
     :return: The constructed paginated ObjectType.
     """
     if not model:
-        raise ValueError("Model is empty in convert_model_to_paginated_object_type")
+        raise ValueError(
+            "Model is empty in convert_model_to_model_paginated_object_type"
+        )
     if exists_conversion_for_model(
         model, registry, TypeRegistryForModelEnum.PAGINATED_OBJECT_TYPE.value
     ):
@@ -138,42 +198,46 @@ def convert_model_to_paginated_object_type(
             model, registry, TypeRegistryForModelEnum.PAGINATED_OBJECT_TYPE.value
         )
     if not pascal_case_name:
-        raise ValueError("Name is empty in convert_model_to_paginated_object_type")
+        raise ValueError(
+            "Name is empty in convert_model_to_model_paginated_object_type"
+        )
     if not model_object_type:
-        raise ValueError("Model object type is empty in convert_model_to_paginated_object_type")
+        raise ValueError(
+            "Model object type is empty in convert_model_to_model_paginated_object_type"
+        )
     if not registry:
         registry = get_global_registry()
     if extra_fields is None:
         extra_fields = {}
+    
     class_meta_paginated_type = build_class(
         name="Meta",
         attrs={
-            "interfaces": (PaginationInterface,),
+            "model_object_type": model_object_type,
+            "registry": registry,
             "name": f"{pascal_case_name}PaginatedType",
-        }
+        },
     )
     class_model_paginated_object_type = build_class(
         name=f"{pascal_case_name}PaginatedType",
-        bases=(graphene.ObjectType,),
+        bases=(ModelPaginatedObjectType,),
         attrs={
             "Meta": class_meta_paginated_type,
-            "objects": ListField(model_object_type, "objects"),
-            **extra_fields
-        }
+            **extra_fields,
+        },
     )
-    registry.register_model(model, TypeRegistryForModelEnum.PAGINATED_OBJECT_TYPE.value, class_model_paginated_object_type)
     return class_model_paginated_object_type
 
 
-def convert_model_to_mutate_input_object_type(
+def convert_model_to_model_mutate_input_object_type(
     model: Dict[str, Any],
-    pascal_case_name:str,
+    pascal_case_name: str,
     registry: RegistryGlobal,
     field_converter_function: Callable[[Any], GRAPHENE_TYPE],
     type_mutation: TypesMutation = TypesMutationEnum.CREATE_UPDATE.value,
     meta_attrs: Union[OrderedDict[str, Any], MetaAttrs, None] = None,
-    extra_fields:Union[Dict[str, GRAPHENE_TYPE], None] = None
-) -> Type[graphene.InputObjectType]:
+    extra_fields: Union[Dict[str, GRAPHENE_TYPE], None] = None,
+) -> Type[ModelInputObjectType]:
     """
     Converts a model into a GraphQL InputObjectType for mutation purposes, based on the specified mutation type.
 
@@ -187,7 +251,9 @@ def convert_model_to_mutate_input_object_type(
     :return: The constructed InputObjectType.
     """
     if not pascal_case_name:
-        raise ValueError("Name is empty in convert_model_to_mutate_input_object_type")
+        raise ValueError(
+            "Name is empty in convert_model_to_model_mutate_input_object_type"
+        )
     if type_mutation == "create_update":
         type_of_registry = (
             TypeRegistryForModelEnum.INPUT_OBJECT_TYPE.value
@@ -204,39 +270,54 @@ def convert_model_to_mutate_input_object_type(
         )  # "input_object_type_for_update"
         name_input_object_type = f"Update{pascal_case_name}Input"
     if not model:
-        raise ValueError("Model is empty in convert_model_to_mutate_input_object_type")
-    if exists_conversion_for_model(
-        model, registry, type_of_registry
-    ):
-        return get_converted_model(
-            model, registry, type_of_registry
+        raise ValueError(
+            "Model is empty in convert_model_to_model_mutate_input_object_type"
         )
+    if exists_conversion_for_model(model, registry, type_of_registry):
+        return get_converted_model(model, registry, type_of_registry)
     if not field_converter_function:
-        raise ValueError("Field converter function is empty in convert_model_to_mutate_input_object_type")
+        raise ValueError(
+            "Field converter function is empty in convert_model_to_model_mutate_input_object_type"
+        )
     if not callable(field_converter_function):
-        raise ValueError("Field converter function is not callable in convert_model_to_mutate_input_object_type")
+        raise ValueError(
+            "Field converter function is not callable in convert_model_to_model_mutate_input_object_type"
+        )
     if not registry:
         registry = get_global_registry()
     if not extra_fields:
         extra_fields = {}
-    converted_fields = get_converted_fields(model, field_converter_function, meta_attrs)
+    if not meta_attrs:
+        meta_attrs = {'only_fields': '__all__', 'exclude_fields': []}
+    
+    class_meta_input_type = build_class(
+        name="Meta",
+        attrs={
+            "model": model,
+            "field_converter_function": field_converter_function,
+            "registry": registry,
+            **meta_attrs,
+        },
+    )
     class_model_input_object_type = build_class(
         name=name_input_object_type,
-        bases=(graphene.InputObjectType,),
-        attrs={**converted_fields, **extra_fields}
+        bases=(ModelInputObjectType,),
+        attrs={
+            "Meta": class_meta_input_type,
+            **extra_fields,
+        },
     )
-    registry.register_model(model, type_of_registry, class_model_input_object_type)
     return class_model_input_object_type
 
 
-def convert_model_to_filter_input_object_type(
+def convert_model_to_model_filter_input_object_type(
     model: Dict[str, Any],
-    pascal_case_name:str,
+    pascal_case_name: str,
     registry: RegistryGlobal,
     field_converter_function: Callable[[Any], GRAPHENE_TYPE],
     meta_attrs: Union[OrderedDict[str, Any], MetaAttrs, None] = None,
-    extra_fields:Union[Dict[str, GRAPHENE_TYPE], None] = None
-) -> Type[graphene.InputObjectType]:
+    extra_fields: Union[Dict[str, GRAPHENE_TYPE], None] = None,
+) -> Type[ModelSearchInputObjectType]:
     """
     Converts a model into a GraphQL InputObjectType for filtering purposes, extending the capabilities for complex queries.
 
@@ -249,9 +330,13 @@ def convert_model_to_filter_input_object_type(
     :return: The constructed filter InputObjectType.
     """
     if not model:
-        raise ValueError("Model is empty in convert_model_to_filter_input_object_type")
+        raise ValueError(
+            "Model is empty in convert_model_to_model_filter_input_object_type"
+        )
     if not pascal_case_name:
-        raise ValueError("Name is empty in convert_model_to_filter_input_object_type")
+        raise ValueError(
+            "Name is empty in convert_model_to_model_filter_input_object_type"
+        )
     if exists_conversion_for_model(
         model, registry, TypeRegistryForModelEnum.INPUT_OBJECT_TYPE_FOR_SEARCH.value
     ):
@@ -259,60 +344,48 @@ def convert_model_to_filter_input_object_type(
             model, registry, TypeRegistryForModelEnum.INPUT_OBJECT_TYPE_FOR_SEARCH.value
         )
     if not field_converter_function:
-        raise ValueError("Field converter function is empty in convert_model_to_filter_input_object_type")
+        raise ValueError(
+            "Field converter function is empty in convert_model_to_model_filter_input_object_type"
+        )
     if not callable(field_converter_function):
-        raise ValueError("Field converter function is not callable in convert_model_to_filter_input_object_type")
+        raise ValueError(
+            "Field converter function is not callable in convert_model_to_model_filter_input_object_type"
+        )
     if not registry:
         registry = get_global_registry()
     if not extra_fields:
         extra_fields = {}
-    converted_fields = get_converted_fields(model, field_converter_function, meta_attrs)
-    converted_fields.update(
-        {
-            "AND": graphene.Dynamic(
-                lambda: graphene.InputField(
-                    graphene.List(
-                        convert_model_to_filter_input_object_type(
-                            model, pascal_case_name, registry, field_converter_function
-                        )
-                    )
-                )
-            ),
-            "OR": graphene.Dynamic(
-                lambda: graphene.InputField(
-                    graphene.List(
-                        convert_model_to_filter_input_object_type(
-                            model, pascal_case_name, registry, field_converter_function
-                        )
-                    )
-                )
-            ),
-            "NOT": graphene.Dynamic(
-                lambda: graphene.InputField(
-                    convert_model_to_filter_input_object_type(
-                        model, pascal_case_name, registry, field_converter_function
-                    )
-                )
-            ),
-        }
+    if not meta_attrs:
+        meta_attrs = {'only_fields': '__all__', 'exclude_fields': []}
+
+    class_meta_search_type = build_class(
+        name="Meta",
+        attrs={
+            "model": model,
+            "field_converter_function": field_converter_function,
+            "registry": registry,
+            **meta_attrs,
+        },
     )
     class_model_filter_input_object_type = build_class(
         name=f"Filter{pascal_case_name}Input",
-        bases=(graphene.InputObjectType,),
-        attrs={**converted_fields, **extra_fields}
+        bases=(ModelSearchInputObjectType,),
+        attrs={
+            "Meta": class_meta_search_type,
+            **extra_fields,
+        },
     )
-    registry.register_model(model, TypeRegistryForModelEnum.INPUT_OBJECT_TYPE_FOR_SEARCH.value, class_model_filter_input_object_type)
     return class_model_filter_input_object_type
 
 
-def convert_model_to_order_by_input_object_type(
+def convert_model_to_model_order_by_input_object_type(
     model: Dict[str, Any],
-    pascal_case_name:str,
+    pascal_case_name: str,
     registry: RegistryGlobal,
     field_converter_function: Callable[[Any], GRAPHENE_TYPE],
     meta_attrs: Union[OrderedDict[str, Any], MetaAttrs, None] = None,
-    extra_fields:Union[Dict[str, GRAPHENE_TYPE], None] = None
-) -> Type[graphene.InputObjectType]:
+    extra_fields: Union[Dict[str, GRAPHENE_TYPE], None] = None,
+) -> Type[ModelOrderByInputObjectType]:
     """
     Converts a model into a GraphQL InputObjectType for specifying order by criteria.
 
@@ -325,28 +398,51 @@ def convert_model_to_order_by_input_object_type(
     :return: The constructed order by InputObjectType.
     """
     if not model:
-        raise ValueError("Model is empty in convert_model_to_order_by_input_object_type")
+        raise ValueError(
+            "Model is empty in convert_model_to_model_order_by_input_object_type"
+        )
     if not pascal_case_name:
-        raise ValueError("Name is empty in convert_model_to_order_by_input_object_type")
+        raise ValueError(
+            "Name is empty in convert_model_to_model_order_by_input_object_type"
+        )
     if exists_conversion_for_model(
         model, registry, TypeRegistryForModelEnum.INPUT_OBJECT_TYPE_FOR_ORDER_BY.value
     ):
         return get_converted_model(
-            model, registry, TypeRegistryForModelEnum.INPUT_OBJECT_TYPE_FOR_ORDER_BY.value
+            model,
+            registry,
+            TypeRegistryForModelEnum.INPUT_OBJECT_TYPE_FOR_ORDER_BY.value,
         )
     if not field_converter_function:
-        raise ValueError("Field converter function is empty in convert_model_to_order_by_input_object_type")
+        raise ValueError(
+            "Field converter function is empty in convert_model_to_model_order_by_input_object_type"
+        )
     if not callable(field_converter_function):
-        raise ValueError("Field converter function is not callable in convert_model_to_order_by_input_object_type")
+        raise ValueError(
+            "Field converter function is not callable in convert_model_to_model_order_by_input_object_type"
+        )
     if not registry:
         registry = get_global_registry()
     if not extra_fields:
         extra_fields = {}
-    converted_fields = get_converted_fields(model, field_converter_function, meta_attrs)
+    if not meta_attrs:
+        meta_attrs = {'only_fields': '__all__', 'exclude_fields': []}
+
+    class_meta_order_by_type = build_class(
+        name="Meta",
+        attrs={
+            "model": model,
+            "field_converter_function": field_converter_function,
+            "registry": registry,
+            **meta_attrs,
+        },
+    )
     class_model_order_by_input_object_type = build_class(
         name=f"OrderBy{pascal_case_name}Input",
-        bases=(graphene.InputObjectType,),
-        attrs={**converted_fields, **extra_fields}
+        bases=(ModelOrderByInputObjectType,),
+        attrs={
+            "Meta": class_meta_order_by_type,
+            **extra_fields,
+        },
     )
-    registry.register_model(model, TypeRegistryForModelEnum.INPUT_OBJECT_TYPE_FOR_ORDER_BY.value, class_model_order_by_input_object_type)
     return class_model_order_by_input_object_type

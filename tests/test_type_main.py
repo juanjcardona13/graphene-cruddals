@@ -7,8 +7,6 @@ from graphene_cruddals.types.main import (
     ModelObjectType,
     ModelPaginatedObjectType, 
     ModelInputObjectType,
-    ModelCreateInputObjectType, 
-    ModelUpdateInputObjectType,
     ModelSearchInputObjectType,
     ModelOrderByInputObjectType
 )
@@ -73,6 +71,9 @@ class TestModelObjectType:
         assert hasattr(TestModel, "_meta")
         assert TestModel._meta.model == sample_model
         assert TestModel._meta.fields.keys() == {"id", "name", "active"}
+        assert isinstance(TestModel._meta.fields["id"], graphene.Field)
+        assert isinstance(TestModel._meta.fields["name"], graphene.Field)
+        assert isinstance(TestModel._meta.fields["active"], graphene.Field)
         registries_for_model = registry.get_registry_for_model(sample_model)
         assert 'object_type' in registries_for_model
         assert registries_for_model['object_type'] == TestModel
@@ -124,7 +125,7 @@ class TestModelObjectType:
                 only_fields = []
         assert hasattr(TestModel, "_meta")
         assert TestModel._meta.model == sample_model
-        assert TestModel._meta.fields.keys() == {}
+        assert list(TestModel._meta.fields.keys()) == []
         registries_for_model = registry.get_registry_for_model(sample_model)
         assert 'object_type' in registries_for_model
         assert registries_for_model['object_type'] == TestModel
@@ -193,24 +194,196 @@ class TestModelInputObjectType:
                 model = sample_model
                 field_converter_function = mock_field_converter
 
-        print(TestModelInput)
+        assert hasattr(TestModelInput, "_meta")
+        assert list(TestModelInput._meta.fields.keys()) == ["id", "name", "active"]
+        assert isinstance(TestModelInput._meta.fields["id"], graphene.InputField)
+        assert isinstance(TestModelInput._meta.fields["name"], graphene.InputField)
+        assert isinstance(TestModelInput._meta.fields["active"], graphene.InputField)
+        registries_for_model = registry.get_registry_for_model(sample_model)
+        assert 'input_object_type' in registries_for_model
+        assert registries_for_model['input_object_type'] == TestModelInput
 
-        # assert hasattr(TestModelInput, "_meta")
-        # assert TestModelInput._meta.fields.keys() == {"id", "name", "active"}
-        # assert isinstance(TestModelInput._meta.fields["id"], graphene.InputField)
-        # assert isinstance(TestModelInput._meta.fields["name"], graphene.InputField)
-        # assert isinstance(TestModelInput._meta.fields["active"], graphene.InputField)
-
-        # registries_for_model = registry.get_registry_for_model(sample_model)
-        # assert 'input_object_type' in registries_for_model
-        # assert registries_for_model['input_object_type'] == TestModelInput
-
-    def test_schema(self):
+    def test_model_input_object_type_init_with_type_mutation_create(self, registry:RegistryGlobal):
         class TestModelInput(ModelInputObjectType):
             class Meta:
                 model = sample_model
                 type_mutation = "create"
+                field_converter_function = mock_field_converter
+
+        assert hasattr(TestModelInput, "_meta")
+        assert list(TestModelInput._meta.fields.keys()) == ["id", "name", "active"]
+        assert isinstance(TestModelInput._meta.fields["id"], graphene.InputField)
+        assert isinstance(TestModelInput._meta.fields["name"], graphene.InputField)
+        assert isinstance(TestModelInput._meta.fields["active"], graphene.InputField)
+        assert TestModelInput._meta.name == "CreateTestModelInput"
+        registries_for_model = registry.get_registry_for_model(sample_model)
+        assert 'input_object_type_for_create' in registries_for_model
+        assert registries_for_model['input_object_type_for_create'] == TestModelInput
+    
+    def test_model_input_object_type_init_with_type_mutation_update(self, registry:RegistryGlobal):
+        class TestModelInput(ModelInputObjectType):
+            class Meta:
+                model = sample_model
+                type_mutation = "update"
+                field_converter_function = mock_field_converter
+
+        assert hasattr(TestModelInput, "_meta")
+        assert list(TestModelInput._meta.fields.keys()) == ["id", "name", "active"]
+        assert isinstance(TestModelInput._meta.fields["id"], graphene.InputField)
+        assert isinstance(TestModelInput._meta.fields["name"], graphene.InputField)
+        assert isinstance(TestModelInput._meta.fields["active"], graphene.InputField)
+        assert TestModelInput._meta.name == "UpdateTestModelInput"
+        registries_for_model = registry.get_registry_for_model(sample_model)
+        assert 'input_object_type_for_update' in registries_for_model
+        assert registries_for_model['input_object_type_for_update'] == TestModelInput
+
+    def test_model_input_object_type_init_with_fields(self, registry:RegistryGlobal):
+        class TestModelInput(ModelInputObjectType):
+            class Meta:
+                model = sample_model
+                field_converter_function = mock_field_converter
+                only_fields = ["id", "name"]
+        assert hasattr(TestModelInput, "_meta")
+        assert list(TestModelInput._meta.fields.keys()) == ["id", "name"]
+        registries_for_model = registry.get_registry_for_model(sample_model)
+        assert 'input_object_type' in registries_for_model
+        assert registries_for_model['input_object_type'] == TestModelInput
+    
+    def test_model_input_object_type_init_with_exclude_fields(self, registry:RegistryGlobal):
+        class TestModelInput(ModelInputObjectType):
+            class Meta:
+                model = sample_model
+                field_converter_function = mock_field_converter
+                exclude_fields = ["id"]
+        assert hasattr(TestModelInput, "_meta")
+        assert list(TestModelInput._meta.fields.keys()) == ["name", "active"]
+        registries_for_model = registry.get_registry_for_model(sample_model)
+        assert 'input_object_type' in registries_for_model
+        assert registries_for_model['input_object_type'] == TestModelInput
+    
+    def test_model_input_object_type_init_with_field_converter(self, registry:RegistryGlobal):
+        class TestModelInput(ModelInputObjectType):
+            class Meta:
+                model = sample_model
                 field_converter_function = mock_field_converter_to_input_field
+        assert hasattr(TestModelInput, "_meta")
+        assert list(TestModelInput._meta.fields.keys()) == ["id", "name", "active"]
+        assert isinstance(TestModelInput._meta.fields["id"], graphene.InputField)
+        registries_for_model = registry.get_registry_for_model(sample_model)
+        assert 'input_object_type' in registries_for_model
+        assert registries_for_model['input_object_type'] == TestModelInput
+    
+    def test_model_input_object_type_init_with_fields_empty(self, registry:RegistryGlobal):
+        class TestModelInput(ModelInputObjectType):
+            class Meta:
+                model = sample_model
+                field_converter_function = mock_field_converter
+                only_fields = []
+        assert hasattr(TestModelInput, "_meta")
+        assert list(TestModelInput._meta.fields.keys()) == []
+        registries_for_model = registry.get_registry_for_model(sample_model)
+        assert 'input_object_type' in registries_for_model
+        assert registries_for_model['input_object_type'] == TestModelInput
 
-        print(TestModelInput)
+    # def test_model_input_object_type_init_with_fields_and_exclude_fields(self, registry:RegistryGlobal):
+    # def test_model_input_object_type_exclude_fields_type_checking
+    # def test_model_input_object_type_only_fields_type_checking
+    # def test_model_input_object_type_field_converter_type_checking
+    # def test_model_input_object_type_field_converter_return_type_checking
 
+class TestModelSearchInputObjectType:
+    
+    def test_model_search_input_object_type_init(self, registry:RegistryGlobal):
+        class TestModelSearchInput(ModelSearchInputObjectType):
+            class Meta:
+                model = sample_model
+                field_converter_function = mock_field_converter
+
+        assert hasattr(TestModelSearchInput, "_meta")
+        assert list(TestModelSearchInput._meta.fields.keys()) == ["id", "name", "active", "AND", "OR", "NOT"]
+        assert isinstance(TestModelSearchInput._meta.fields["id"], graphene.InputField)
+        assert isinstance(TestModelSearchInput._meta.fields["name"], graphene.InputField)
+        assert isinstance(TestModelSearchInput._meta.fields["active"], graphene.InputField)
+        assert isinstance(TestModelSearchInput._meta.fields["AND"], graphene.Dynamic)
+        assert isinstance(TestModelSearchInput._meta.fields["OR"], graphene.Dynamic)
+        assert isinstance(TestModelSearchInput._meta.fields["NOT"], graphene.Dynamic)
+        registries_for_model = registry.get_registry_for_model(sample_model)
+        assert 'input_object_type_for_search' in registries_for_model
+        assert registries_for_model['input_object_type_for_search'] == TestModelSearchInput
+
+    def test_model_search_input_object_type_init_with_fields(self, registry:RegistryGlobal):
+        class TestModelSearchInput(ModelSearchInputObjectType):
+            class Meta:
+                model = sample_model
+                field_converter_function = mock_field_converter
+                only_fields = ["id", "name"]
+        assert hasattr(TestModelSearchInput, "_meta")
+        assert list(TestModelSearchInput._meta.fields.keys()) == ["id", "name", "AND", "OR", "NOT"]
+        registries_for_model = registry.get_registry_for_model(sample_model)
+        assert 'input_object_type_for_search' in registries_for_model
+        assert registries_for_model['input_object_type_for_search'] == TestModelSearchInput
+    
+    def test_model_search_input_object_type_init_with_exclude_fields(self, registry:RegistryGlobal):
+        class TestModelSearchInput(ModelSearchInputObjectType):
+            class Meta:
+                model = sample_model
+                field_converter_function = mock_field_converter
+                exclude_fields = ["id"]
+        assert hasattr(TestModelSearchInput, "_meta")
+        assert list(TestModelSearchInput._meta.fields.keys()) == ["name", "active", "AND", "OR", "NOT"]
+        registries_for_model = registry.get_registry_for_model(sample_model)
+        assert 'input_object_type_for_search' in registries_for_model
+        assert registries_for_model['input_object_type_for_search'] == TestModelSearchInput
+
+    # def test_model_search_input_object_type_init_with_fields_and_exclude_fields(self, registry:RegistryGlobal):
+    # def test_model_search_input_object_type_exclude_fields_type_checking
+    # def test_model_search_input_object_type_only_fields_type_checking
+    # def test_model_search_input_object_type_field_converter_type_checking
+    # def test_model_search_input_object_type_field_converter_return_type_checking
+
+class TestModelOrderByInputObjectType:
+        
+    def test_model_order_by_input_object_type_init(self, registry:RegistryGlobal):
+        class TestModelOrderByInput(ModelOrderByInputObjectType):
+            class Meta:
+                model = sample_model
+                field_converter_function = mock_field_converter
+
+        assert hasattr(TestModelOrderByInput, "_meta")
+        assert list(TestModelOrderByInput._meta.fields.keys()) == ["id", "name", "active"]
+        assert isinstance(TestModelOrderByInput._meta.fields["id"], graphene.InputField)
+        assert isinstance(TestModelOrderByInput._meta.fields["name"], graphene.InputField)
+        assert isinstance(TestModelOrderByInput._meta.fields["active"], graphene.InputField)
+        registries_for_model = registry.get_registry_for_model(sample_model)
+        assert 'input_object_type_for_order_by' in registries_for_model
+        assert registries_for_model['input_object_type_for_order_by'] == TestModelOrderByInput
+
+    def test_model_order_by_input_object_type_init_with_fields(self, registry:RegistryGlobal):
+        class TestModelOrderByInput(ModelOrderByInputObjectType):
+            class Meta:
+                model = sample_model
+                field_converter_function = mock_field_converter
+                only_fields = ["id", "name"]
+        assert hasattr(TestModelOrderByInput, "_meta")
+        assert list(TestModelOrderByInput._meta.fields.keys()) == ["id", "name"]
+        registries_for_model = registry.get_registry_for_model(sample_model)
+        assert 'input_object_type_for_order_by' in registries_for_model
+        assert registries_for_model['input_object_type_for_order_by'] == TestModelOrderByInput
+    
+    def test_model_order_by_input_object_type_init_with_exclude_fields(self, registry:RegistryGlobal):
+        class TestModelOrderByInput(ModelOrderByInputObjectType):
+            class Meta:
+                model = sample_model
+                field_converter_function = mock_field_converter
+                exclude_fields = ["id"]
+        assert hasattr(TestModelOrderByInput, "_meta")
+        assert list(TestModelOrderByInput._meta.fields.keys()) == ["name", "active"]
+        registries_for_model = registry.get_registry_for_model(sample_model)
+        assert 'input_object_type_for_order_by' in registries_for_model
+        assert registries_for_model['input_object_type_for_order_by'] == TestModelOrderByInput
+
+    # def test_model_order_by_input_object_type_init_with_fields_and_exclude_fields(self, registry:RegistryGlobal):
+    # def test_model_order_by_input_object_type_exclude_fields_type_checking
+    # def test_model_order_by_input_object_type_only_fields_type_checking
+    # def test_model_order_by_input_object_type_field_converter_type_checking
+    # def test_model_order_by_input_object_type_field_converter_return_type_checking

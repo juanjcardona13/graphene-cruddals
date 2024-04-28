@@ -1,12 +1,14 @@
 import graphene
 from graphene.types.generic import GenericScalar
-from typing import Dict, Literal, Type, Union
+from typing import Any, Callable, Dict, Literal, Type, Union
 from collections import OrderedDict
+from graphene_cruddals.registry.registry_global import RegistryGlobal
 from graphene_cruddals.utils.error_handling.error_types import ErrorCollectionType
-from graphene_cruddals.utils.main import build_class
+from graphene_cruddals.utils.main import build_class, exists_conversion_for_model, get_converted_model
+from graphene_cruddals.utils.typing.custom_typing import TypeRegistryForModel, TypeRegistryForModelEnum
 
 
-def get_object_type_payload(model_object_type: Type[graphene.ObjectType], name_for_output_type: str, plural_model_name: str, include_success=False):
+def get_object_type_payload(model:Dict[str, Any], registry:RegistryGlobal, name_for_output_type: str, plural_model_name: str, include_success=False):
     """
     Returns a dynamically generated GraphQL ObjectType class that represents the payload for a specific object type.
 
@@ -19,9 +21,9 @@ def get_object_type_payload(model_object_type: Type[graphene.ObjectType], name_f
     Returns:
         type: The dynamically generated GraphQL ObjectType class representing the payload.
     """
-    output_fields: Dict[str, Union[ListField, graphene.Field]] = OrderedDict(
+    output_fields: Dict[str, Union[ModelListField, graphene.Field]] = OrderedDict(
         {
-            "objects": ListField(model_object_type, "objects"),  # TODa: If I want that the name of the field is the plural_model_name, I need to change the name of the field to plural_model_name, Missing check impact
+            "objects": ModelListField("objects", model, registry),  # TODa: If I want that the name of the field is the plural_model_name, I need to change the name of the field to plural_model_name, Missing check impact
             "errors_report": graphene.Field(graphene.List(ErrorCollectionType)),
         }
     )
@@ -39,8 +41,8 @@ class IntOrAll(GenericScalar):
 
 
 class PaginationConfigInput(graphene.InputObjectType):
-    page = graphene.InputField(graphene.Int, default_value=1)
-    items_per_page = graphene.InputField(IntOrAll, default_value="All")
+    page = graphene.InputField(graphene.Int, default_value=1) # type: ignore
+    items_per_page = graphene.InputField(IntOrAll, default_value="All") # type: ignore
 
 
 class PaginationInterface(graphene.Interface):
@@ -56,29 +58,59 @@ class PaginationInterface(graphene.Interface):
     index_end_obj = graphene.Field(graphene.Int)
 
 
-class CreateUpdateField(graphene.Field):
-    def __init__(self, model_object_type: Type[graphene.ObjectType], plural_model_name:str, type_operation:Literal["Create", "Update"], args=None, resolver=None, **extra_args):
+class ModelCreateUpdateField(graphene.Field):
+    def __init__(self, plural_model_name:str, type_operation:Literal["Create", "Update"], model:Dict[str, Any], registry:RegistryGlobal, resolver:Union[Callable[..., Any], None]=None, **extra_args):
         
+        type_registry = TypeRegistryForModelEnum.INPUT_OBJECT_TYPE_FOR_CREATE.value if type_operation == "Create" else TypeRegistryForModelEnum.INPUT_OBJECT_TYPE_FOR_UPDATE.value
+        if not exists_conversion_for_model(model, registry, type_registry):
+            raise ValueError(f"The model does not have a ModelInputObjectType registered for {type_operation.lower()} operation")
+        
+        model_as_input_object_type = get_converted_model(model, registry, type_registry)
 
-        payload_type = get_object_type_payload( 
-            model_object_type=model_object_type,
+        args = {
+            "input": graphene.Argument(graphene.List(graphene.NonNull(model_as_input_object_type)), required=True)
+        }
+
+        payload_type = get_object_type_payload(
+            model=model,
+            registry=registry,
             name_for_output_type=f"{type_operation}{plural_model_name}Payload",
-            plural_model_name=plural_model_name 
+            plural_model_name=plural_model_name,
+            include_success=False,
         )
 
         super().__init__(payload_type, name=f"{type_operation.lower()}{plural_model_name}", args=args, resolver=resolver, **extra_args)
 
 
-class ReadField(graphene.Field):
-    def __init__(self, model_object_type:Type[graphene.ObjectType], singular_model_name:str, args=None, resolver=None, **extra_args):
+class ModelReadField(graphene.Field):
+    def __init__(self, singular_model_name:str, model:Dict[str, Any], registry:RegistryGlobal, resolver:Union[Callable[..., Any], None]=None, **extra_args):
+        if not exists_conversion_for_model(model, registry, TypeRegistryForModelEnum.INPUT_OBJECT_TYPE_FOR_SEARCH.value):
+            raise ValueError("The model does not have a ModelSearchInputObjectType registered and it is required for the read operation")
+        
+        model_object_type = get_converted_model(model, registry, TypeRegistryForModelEnum.OBJECT_TYPE.value)
+        model_as_search_input_object_type = get_converted_model(model, registry, TypeRegistryForModelEnum.INPUT_OBJECT_TYPE_FOR_SEARCH.value)
+        
+        args = {
+            "where": graphene.Argument(model_as_search_input_object_type, required=True),
+        }
         super().__init__(model_object_type, name=f"read{singular_model_name}", args=args, resolver=resolver, **extra_args)
 
 
-class DeleteField(graphene.Field):
-    def __init__(self, model_object_type:Type[graphene.ObjectType], plural_model_name:str, args=None, resolver=None, **extra_args):
+class ModelDeleteField(graphene.Field):
+    def __init__(self, plural_model_name:str, model:Dict[str, Any], registry:RegistryGlobal, resolver:Union[Callable[..., Any], None]=None, **extra_args):
+
+        if not exists_conversion_for_model(model, registry, TypeRegistryForModelEnum.INPUT_OBJECT_TYPE_FOR_SEARCH.value):
+            raise ValueError("The model does not have a ModelSearchInputObjectType registered and it is required for the delete operation")
+        
+        model_as_search_input_object_type = get_converted_model(model, registry, TypeRegistryForModelEnum.INPUT_OBJECT_TYPE_FOR_SEARCH.value)
+        
+        args = {
+            "where": graphene.Argument(model_as_search_input_object_type, required=True),
+        }
 
         payload_type = get_object_type_payload(
-            model_object_type=model_object_type,
+            model=model,
+            registry=registry,
             plural_model_name=plural_model_name,
             name_for_output_type=f"Delete{plural_model_name}Payload",
             include_success=True,
@@ -87,11 +119,21 @@ class DeleteField(graphene.Field):
         super().__init__(payload_type, name=f"delete{plural_model_name}", args=args, resolver=resolver, **extra_args)
 
 
-class DeactivateField(graphene.Field):
-    def __init__(self, model_object_type:Type[graphene.ObjectType], plural_model_name:str, args=None, resolver=None, **extra_args):
+class ModelDeactivateField(graphene.Field):
+    def __init__(self, plural_model_name:str, model:Dict[str, Any], registry:RegistryGlobal, state_controller_field:Union[str, None]=None, resolver:Union[Callable[..., Any], None]=None, **extra_args):
+
+        if not exists_conversion_for_model(model, registry, TypeRegistryForModelEnum.INPUT_OBJECT_TYPE_FOR_SEARCH.value):
+            raise ValueError("The model does not have a ModelSearchInputObjectType registered and it is required for the deactivate operation")
+        
+        model_as_search_input_object_type = get_converted_model(model, registry, TypeRegistryForModelEnum.INPUT_OBJECT_TYPE_FOR_SEARCH.value)
+        
+        args = {
+            "where": graphene.Argument(model_as_search_input_object_type, required=True),
+        }
 
         payload_type = get_object_type_payload(
-            model_object_type=model_object_type, 
+            model=model,
+            registry=registry,
             plural_model_name=plural_model_name,
             name_for_output_type=f"Deactivate{plural_model_name}Payload"
         )
@@ -99,11 +141,21 @@ class DeactivateField(graphene.Field):
         super().__init__(payload_type, name=f"deactivate{plural_model_name}", args=args, resolver=resolver, **extra_args)
 
 
-class ActivateField(graphene.Field):
-    def __init__(self, model_object_type:Type[graphene.ObjectType], plural_model_name:str, args=None, resolver=None, **extra_args):
+class ModelActivateField(graphene.Field):
+    def __init__(self, plural_model_name:str, model:Dict[str, Any], registry:RegistryGlobal, state_controller_field:Union[str, None]=None, resolver:Union[Callable[..., Any], None]=None, **extra_args):
+
+        if not exists_conversion_for_model(model, registry, TypeRegistryForModelEnum.INPUT_OBJECT_TYPE_FOR_SEARCH.value):
+            raise ValueError("The model does not have a ModelSearchInputObjectType registered and it is required for the activate operation")
+        
+        model_as_search_input_object_type = get_converted_model(model, registry, TypeRegistryForModelEnum.INPUT_OBJECT_TYPE_FOR_SEARCH.value)
+        
+        args = {
+            "where": graphene.Argument(model_as_search_input_object_type, required=True),
+        }
 
         payload_type = get_object_type_payload(
-            model_object_type=model_object_type, 
+            model=model,
+            registry=registry,
             plural_model_name=plural_model_name,
             name_for_output_type=f"Activate{plural_model_name}Payload"
         )
@@ -111,20 +163,39 @@ class ActivateField(graphene.Field):
         super().__init__(payload_type, name=f"activate{plural_model_name}", args=args, resolver=resolver, **extra_args)
 
 
-class ListField(graphene.Field):
-    def __init__(self, model_object_type:Type[graphene.ObjectType], plural_model_name:str, args=None, resolver=None, **extra_args):
-
+class ModelListField(graphene.Field):
+    def __init__(self, plural_model_name:str, model:Dict[str, Any], registry:RegistryGlobal, resolver:Union[Callable[..., Any], None]=None, **extra_args):
+        model_object_type = get_converted_model(model, registry, TypeRegistryForModelEnum.OBJECT_TYPE.value)
         name = f"list{plural_model_name}" if plural_model_name != "objects" else "objects"
         #TODa: Check if is List(NonNull(ModelObjectType)) or List(ModelObjectType)
-        super().__init__(graphene.List(graphene.NonNull(model_object_type)), name=name, args=args, resolver=resolver, **extra_args)
+        super().__init__(graphene.List(graphene.NonNull(model_object_type)), name=name, resolver=resolver, **extra_args)
 
 
-class SearchField(graphene.Field):
+class ModelSearchField(graphene.Field):
 
-    def __init__(self, model_as_paginated_object_type, plural_model_name, args=None, resolver=None, **extra_args):
+    def __init__(self, plural_model_name:str, model:Dict[str, Any], registry:RegistryGlobal, resolver:Union[Callable[..., Any], None]=None, **extra_args):
+
+        if not exists_conversion_for_model(model, registry, TypeRegistryForModelEnum.PAGINATED_OBJECT_TYPE.value):
+            raise ValueError("The model does not have a ModelPaginatedObjectType registered and it is required for the search operation")
+
+        if not exists_conversion_for_model(model, registry, TypeRegistryForModelEnum.INPUT_OBJECT_TYPE_FOR_SEARCH.value):
+            raise ValueError("The model does not have a ModelSearchInputObjectType registered and it is required for the search operation")
         
+        if not exists_conversion_for_model(model, registry, TypeRegistryForModelEnum.INPUT_OBJECT_TYPE_FOR_ORDER_BY.value):
+            raise ValueError("The model does not have a ModelOrderByInputObjectType registered and it is required for the search operation")
+        
+        
+        model_as_paginated_object_type = get_converted_model(model, registry, TypeRegistryForModelEnum.PAGINATED_OBJECT_TYPE.value)
+        model_as_search_input_object_type = get_converted_model(model, registry, TypeRegistryForModelEnum.INPUT_OBJECT_TYPE_FOR_SEARCH.value)
+        model_as_order_by_input_object_type = get_converted_model(model, registry, TypeRegistryForModelEnum.INPUT_OBJECT_TYPE_FOR_ORDER_BY.value)
+
         if model_as_paginated_object_type._meta.interfaces is None or PaginationInterface not in model_as_paginated_object_type._meta.interfaces:
-            raise ValueError("The model_as_paginated_object_type must implement the PaginationInterface")
+            raise ValueError("The ModelPaginatedObjectType must implement the PaginationInterface")
         
+        args = {
+            "where": graphene.Argument(model_as_search_input_object_type),
+            "order_by": graphene.Argument(model_as_order_by_input_object_type, name="orderBy"),
+            "pagination_config": graphene.Argument(PaginationConfigInput, name="paginationConfig"),
+        }
 
         super().__init__(model_as_paginated_object_type, name=f"search{plural_model_name}", args=args, resolver=resolver, **extra_args)

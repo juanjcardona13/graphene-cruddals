@@ -10,7 +10,7 @@ def registry_named():
     return get_global_registry("MyRegistry")
 
 @pytest.fixture
-def reset_global_registry():
+def reset_registry():
     reset_global_registry()
 
 def test_register_model(registry):
@@ -18,7 +18,7 @@ def test_register_model(registry):
     registry.register_model(model, 'type_a', 'value_a')
     assert registry.get_registry_for_model(model) == {'type_a': 'value_a'}, "Model not registered correctly"
 
-def test_get_all_models(registry):
+def test_get_all_models(reset_registry, registry):
     registry.register_model({'name': 'ModelA'}, 'type_a', 'value_a')
     registry.register_model({'name': 'ModelB'}, 'type_b', 'value_b')
     assert len(registry.get_all_models_registered()) == 2, "Incorrect number of models registered"
