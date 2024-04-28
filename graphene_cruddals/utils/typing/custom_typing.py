@@ -1,7 +1,7 @@
-import graphene
 from enum import Enum
-from typing import Any, Type, TypedDict, Union, List, Literal, Optional
+from typing import Any, List, Literal, Optional, Type, TypedDict, Union
 
+import graphene
 
 GRAPHENE_TYPE = Union[
     graphene.Scalar,
@@ -29,6 +29,7 @@ GRAPHENE_TYPE = Union[
     graphene.Union,
 ]
 
+
 class ModifyArgument(TypedDict):
     type_: Union[Any, None]
     name: Union[str, None]
@@ -46,6 +47,16 @@ CamelFunctionType = Literal[
     "Create", "Read", "Update", "Delete", "Deactivate", "Activate", "List", "Search"
 ]
 
+NameResolverType = Literal[
+    "resolver",
+    "pre_resolver",
+    "post_resolver",
+    "override_total_resolver",
+    "mutate",
+    "pre_mutate",
+    "post_mutate",
+    "override_total_mutate",
+]
 
 TypesMutation = Literal["create_update", "create", "update"]
 
@@ -98,9 +109,7 @@ class TypeRegistryForFieldEnum(Enum):
     INPUT_FOR_ORDER_BY = "input_for_order_by"
 
 
-# For interfaces,
-# is executed first AppInterface, after Model Interface, for both is executed in order of list
-INTERFACE_META_CLASS_TYPE_NAMES = [
+ListInternalInterfaceMetaClassNames = Literal[
     "MetaObjectType",
     "MetaInputObjectType",
     "MetaCreateInputObjectType",
@@ -109,7 +118,7 @@ INTERFACE_META_CLASS_TYPE_NAMES = [
     "MetaOrderByInputObjectType",
 ]
 
-CLASS_INTERFACE_TYPE_NAMES = [
+ListInternalInterfaceTypeNames = Literal[
     "ObjectType",
     "InputObjectType",
     "CreateInputObjectType",
@@ -118,10 +127,10 @@ CLASS_INTERFACE_TYPE_NAMES = [
     "OrderByInputObjectType",
 ]
 
-CLASS_INTERFACE_FIELDS_NAMES = [
-    "CreateField",
+ListInternalInterfaceFieldsNames = Literal[
+    "ModelCreateField",
     "ModelReadField",
-    "UpdateField",
+    "ModelUpdateField",
     "ModelDeleteField",
     "ModelDeactivateField",
     "ModelActivateField",
@@ -129,13 +138,54 @@ CLASS_INTERFACE_FIELDS_NAMES = [
     "ModelSearchField",
 ]
 
-INTERFACES_NAME_CRUDDALS = CLASS_INTERFACE_FIELDS_NAMES + CLASS_INTERFACE_TYPE_NAMES + INTERFACE_META_CLASS_TYPE_NAMES
+ListInternalInterfaceNameCruddals = Union[
+    ListInternalInterfaceMetaClassNames,
+    ListInternalInterfaceTypeNames,
+    ListInternalInterfaceFieldsNames,
+]
+
+# For interfaces,
+# is executed first AppInterface, after Model Interface, for both is executed in order of list
+INTERNAL_INTERFACE_META_CLASS_NAMES: List[ListInternalInterfaceMetaClassNames] = [
+    "MetaObjectType",
+    "MetaInputObjectType",
+    "MetaCreateInputObjectType",
+    "MetaUpdateInputObjectType",
+    "MetaFilterInputObjectType",
+    "MetaOrderByInputObjectType",
+]
+
+CLASS_INTERNAL_INTERFACE_TYPE_NAMES: List[ListInternalInterfaceTypeNames] = [
+    "ObjectType",
+    "InputObjectType",
+    "CreateInputObjectType",
+    "UpdateInputObjectType",
+    "FilterInputObjectType",
+    "OrderByInputObjectType",
+]
+
+CLASS_INTERNAL_INTERFACE_FIELDS_NAMES: List[ListInternalInterfaceFieldsNames] = [
+    "ModelCreateField",
+    "ModelReadField",
+    "ModelUpdateField",
+    "ModelDeleteField",
+    "ModelDeactivateField",
+    "ModelActivateField",
+    "ModelListField",
+    "ModelSearchField",
+]
+
+INTERNAL_INTERFACES_NAME_CRUDDALS: List[ListInternalInterfaceNameCruddals] = (
+    CLASS_INTERNAL_INTERFACE_FIELDS_NAMES
+    + CLASS_INTERNAL_INTERFACE_TYPE_NAMES
+    + INTERNAL_INTERFACE_META_CLASS_NAMES
+)
 
 
-class CruddalsInterfaceNames(Enum):
-    CREATE_FIELD = "CreateField"
+class CruddalsInternalInterfaceNames(Enum):
+    CREATE_FIELD = "ModelCreateField"
     READ_FIELD = "ModelReadField"
-    UPDATE_FIELD = "UpdateField"
+    UPDATE_FIELD = "ModelUpdateField"
     DELETE_FIELD = "ModelDeleteField"
     DEACTIVATE_FIELD = "ModelDeactivateField"
     ACTIVATE_FIELD = "ModelActivateField"
@@ -150,7 +200,7 @@ class CruddalsInterfaceNames(Enum):
     ORDER_BY_INPUT_OBJECT_TYPE = "OrderByInputObjectType"
 
 
-class MetaCruddalsInterfaceNames(Enum):
+class MetaCruddalsInternalInterfaceNames(Enum):
     META_OBJECT_TYPE = "MetaObjectType"
     META_INPUT_OBJECT_TYPE = "MetaInputObjectType"
     META_CREATE_INPUT_OBJECT_TYPE = "MetaCreateInputObjectType"

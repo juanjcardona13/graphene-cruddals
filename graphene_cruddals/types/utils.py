@@ -1,17 +1,24 @@
-import graphene
 from typing import (
     Any,
+    Callable,
     Dict,
-    Literal,
     OrderedDict,
     Type,
-    Callable,
-    List,
     Union,
-    Any,
-    Callable,
 )
-from graphene_cruddals.operation_fields.main import ModelListField, PaginationInterface
+
+import graphene
+from graphene_cruddals.registry.registry_global import (
+    RegistryGlobal,
+    get_global_registry,
+)
+from graphene_cruddals.types.main import (
+    ModelInputObjectType,
+    ModelObjectType,
+    ModelOrderByInputObjectType,
+    ModelPaginatedObjectType,
+    ModelSearchInputObjectType,
+)
 from graphene_cruddals.utils.main import (
     build_class,
     exists_conversion_for_model,
@@ -20,95 +27,83 @@ from graphene_cruddals.utils.main import (
 from graphene_cruddals.utils.typing.custom_typing import (
     GRAPHENE_TYPE,
     MetaAttrs,
+    TypeRegistryForModelEnum,
     TypesMutation,
     TypesMutationEnum,
-    TypeRegistryForModelEnum,
-)
-from graphene_cruddals.registry.registry_global import (
-    RegistryGlobal,
-    get_global_registry,
-)
-from graphene_cruddals.types.main import (
-    ModelObjectType,
-    ModelPaginatedObjectType,
-    ModelInputObjectType,
-    ModelSearchInputObjectType,
-    ModelOrderByInputObjectType,
 )
 
+# def get_final_exclude_fields(
+#     meta_attrs: Union[
+#         Dict[str, List[str]], OrderedDict[str, List[str]], MetaAttrs, None
+#     ] = None,
+# ) -> Union[List[str], None]:
+#     """
+#     Determines the fields to exclude based on metadata attributes.
 
-def get_final_exclude_fields(
-    meta_attrs: Union[
-        Dict[str, List[str]], OrderedDict[str, List[str]], MetaAttrs, None
-    ] = None,
-) -> Union[List[str], None]:
-    """
-    Determines the fields to exclude based on metadata attributes.
-
-    :param meta_attrs: Metadata attributes which may contain exclusion specifications.
-    :return: List of field names to exclude or None if no exclusions are specified.
-    """
-    if meta_attrs:
-        if meta_attrs.get("exclude"):
-            return meta_attrs.get("exclude")
-        if meta_attrs.get("exclude_fields"):
-            return meta_attrs.get("exclude_fields")
-    return None
-
-
-def get_final_fields(
-    model: Dict[str, Any],
-    meta_attrs: Union[OrderedDict[str, Any], MetaAttrs, None] = None,
-) -> Union[List[str], Literal["__all__"]]:
-    """
-    Determines the final set of model fields to include based on inclusion and exclusion criteria.
-
-    :param model: Dictionary representing the model fields and their types.
-    :param meta_attrs: Metadata attributes which may contain field specifications.
-    :return: List of field names to include or '__all__' to include all fields.
-    """
-    final_fields = list(model.keys())
-    final_exclude_fields = get_final_exclude_fields(meta_attrs)
-    if meta_attrs:
-        if meta_attrs.get("only"):
-            final_fields = meta_attrs.get("only")
-        elif meta_attrs.get("only_fields"):
-            final_fields = meta_attrs.get("only_fields")
-        elif meta_attrs.get("fields"):
-            final_fields = meta_attrs.get("fields")
-        elif final_exclude_fields:
-            final_fields = [
-                field for field in final_fields if field not in final_exclude_fields
-            ]
-    return final_fields or []
+#     :param meta_attrs: Metadata attributes which may contain exclusion specifications.
+#     :return: List of field names to exclude or None if no exclusions are specified.
+#     """
+#     if meta_attrs:
+#         if meta_attrs.get("exclude"):
+#             return meta_attrs.get("exclude")
+#         if meta_attrs.get("exclude_fields"):
+#             return meta_attrs.get("exclude_fields")
+#     return None
 
 
-def get_converted_fields(
-    model: Dict[str, Any],
-    field_converter_function: Callable[[Any], GRAPHENE_TYPE],
-    meta_attrs: Union[OrderedDict[str, Any], MetaAttrs, None] = None,
-) -> Dict[str, GRAPHENE_TYPE]:
-    """
-    Converts model fields into GraphQL fields using a specified conversion function.
+# def get_final_fields(
+#     model: Dict[str, Any],
+#     meta_attrs: Union[OrderedDict[str, Any], MetaAttrs, None] = None,
+# ) -> Union[List[str], Literal["__all__"]]:
+#     """
+#     Determines the final set of model fields to include based on inclusion and exclusion criteria.
 
-    :param model: Dictionary representing the model fields and their types.
-    :param field_converter_function: Function to convert model field types to GraphQL types.
-    :param meta_attrs: Metadata attributes which may contain field specifications.
-    :return: Dictionary of field names and their converted GraphQL types.
-    """
-    final_fields = get_final_fields(model, meta_attrs)
-    converted_fields = {}
-    for field_name, field_type in model.items():
-        if final_fields == "__all__" or field_name in final_fields:
-            converted_fields[field_name] = field_converter_function(field_type)
-    return converted_fields
+#     :param model: Dictionary representing the model fields and their types.
+#     :param meta_attrs: Metadata attributes which may contain field specifications.
+#     :return: List of field names to include or '__all__' to include all fields.
+#     """
+#     final_fields = list(model.keys())
+#     final_exclude_fields = get_final_exclude_fields(meta_attrs)
+#     if meta_attrs:
+#         if meta_attrs.get("only"):
+#             final_fields = meta_attrs.get("only")
+#         elif meta_attrs.get("only_fields"):
+#             final_fields = meta_attrs.get("only_fields")
+#         elif meta_attrs.get("fields"):
+#             final_fields = meta_attrs.get("fields")
+#         elif final_exclude_fields:
+#             final_fields = [
+#                 field for field in final_fields if field not in final_exclude_fields
+#             ]
+#     return final_fields or []
+
+
+# def get_converted_fields(
+#     model: Dict[str, Any],
+#     field_converter_function: Callable[[Any, RegistryGlobal], GRAPHENE_TYPE],
+#     meta_attrs: Union[OrderedDict[str, Any], MetaAttrs, None] = None,
+# ) -> Dict[str, GRAPHENE_TYPE]:
+#     """
+#     Converts model fields into GraphQL fields using a specified conversion function.
+
+#     :param model: Dictionary representing the model fields and their types.
+#     :param field_converter_function: Function to convert model field types to GraphQL types.
+#     :param meta_attrs: Metadata attributes which may contain field specifications.
+#     :return: Dictionary of field names and their converted GraphQL types.
+#     """
+#     final_fields = get_final_fields(model, meta_attrs)
+#     converted_fields = {}
+#     for field_name, field_type in model.items():
+#         if final_fields == "__all__" or field_name in final_fields:
+#             converted_fields[field_name] = field_converter_function(field_type)
+#     return converted_fields
 
 
 def convert_model_to_model_object_type(
     model: Dict[str, Any],
     pascal_case_name: str,
     registry: RegistryGlobal,
-    field_converter_function: Callable[[Any], GRAPHENE_TYPE],
+    field_converter_function: Callable[[Any, RegistryGlobal], GRAPHENE_TYPE],
     meta_attrs: Union[OrderedDict[str, Any], MetaAttrs, None] = None,
     extra_fields: Union[Dict[str, GRAPHENE_TYPE], None] = None,
 ) -> Type[ModelObjectType]:
@@ -146,14 +141,12 @@ def convert_model_to_model_object_type(
     if not extra_fields:
         extra_fields = {}
     if not meta_attrs:
-        meta_attrs = {'only_fields': '__all__', 'exclude_fields': []}
+        meta_attrs = {"only_fields": "__all__", "exclude_fields": []}
 
-
-    
     class_meta_type = build_class(
         name="Meta",
         attrs={
-            "model": model, 
+            "model": model,
             "field_converter_function": field_converter_function,
             "registry": registry,
             **meta_attrs,
@@ -209,7 +202,7 @@ def convert_model_to_model_paginated_object_type(
         registry = get_global_registry()
     if extra_fields is None:
         extra_fields = {}
-    
+
     class_meta_paginated_type = build_class(
         name="Meta",
         attrs={
@@ -233,7 +226,7 @@ def convert_model_to_model_mutate_input_object_type(
     model: Dict[str, Any],
     pascal_case_name: str,
     registry: RegistryGlobal,
-    field_converter_function: Callable[[Any], GRAPHENE_TYPE],
+    field_converter_function: Callable[[Any, RegistryGlobal], GRAPHENE_TYPE],
     type_mutation: TypesMutation = TypesMutationEnum.CREATE_UPDATE.value,
     meta_attrs: Union[OrderedDict[str, Any], MetaAttrs, None] = None,
     extra_fields: Union[Dict[str, GRAPHENE_TYPE], None] = None,
@@ -288,13 +281,14 @@ def convert_model_to_model_mutate_input_object_type(
     if not extra_fields:
         extra_fields = {}
     if not meta_attrs:
-        meta_attrs = {'only_fields': '__all__', 'exclude_fields': []}
-    
+        meta_attrs = {"only_fields": "__all__", "exclude_fields": []}
+
     class_meta_input_type = build_class(
         name="Meta",
         attrs={
             "model": model,
             "field_converter_function": field_converter_function,
+            "type_mutation": type_mutation,
             "registry": registry,
             **meta_attrs,
         },
@@ -314,7 +308,7 @@ def convert_model_to_model_filter_input_object_type(
     model: Dict[str, Any],
     pascal_case_name: str,
     registry: RegistryGlobal,
-    field_converter_function: Callable[[Any], GRAPHENE_TYPE],
+    field_converter_function: Callable[[Any, RegistryGlobal], GRAPHENE_TYPE],
     meta_attrs: Union[OrderedDict[str, Any], MetaAttrs, None] = None,
     extra_fields: Union[Dict[str, GRAPHENE_TYPE], None] = None,
 ) -> Type[ModelSearchInputObjectType]:
@@ -356,7 +350,7 @@ def convert_model_to_model_filter_input_object_type(
     if not extra_fields:
         extra_fields = {}
     if not meta_attrs:
-        meta_attrs = {'only_fields': '__all__', 'exclude_fields': []}
+        meta_attrs = {"only_fields": "__all__", "exclude_fields": []}
 
     class_meta_search_type = build_class(
         name="Meta",
@@ -382,7 +376,7 @@ def convert_model_to_model_order_by_input_object_type(
     model: Dict[str, Any],
     pascal_case_name: str,
     registry: RegistryGlobal,
-    field_converter_function: Callable[[Any], GRAPHENE_TYPE],
+    field_converter_function: Callable[[Any, RegistryGlobal], GRAPHENE_TYPE],
     meta_attrs: Union[OrderedDict[str, Any], MetaAttrs, None] = None,
     extra_fields: Union[Dict[str, GRAPHENE_TYPE], None] = None,
 ) -> Type[ModelOrderByInputObjectType]:
@@ -426,7 +420,7 @@ def convert_model_to_model_order_by_input_object_type(
     if not extra_fields:
         extra_fields = {}
     if not meta_attrs:
-        meta_attrs = {'only_fields': '__all__', 'exclude_fields': []}
+        meta_attrs = {"only_fields": "__all__", "exclude_fields": []}
 
     class_meta_order_by_type = build_class(
         name="Meta",
