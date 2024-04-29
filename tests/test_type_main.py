@@ -15,15 +15,15 @@ from graphene_cruddals.types.main import (
 )
 
 
-def mock_field_converter(field, registry):
+def mock_field_converter(name, field, registry):
     return graphene.String(description="Converted")
 
 
-def mock_field_converter_to_field(field, registry):
+def mock_field_converter_to_field(name, field, registry):
     return graphene.Field(graphene.String, description="Converted")
 
 
-def mock_field_converter_to_input_field(field, registry):
+def mock_field_converter_to_input_field(name, field, registry):
     return graphene.InputField(graphene.String, description="Converted")
 
 

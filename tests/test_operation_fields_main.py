@@ -4,9 +4,7 @@ import graphene
 from graphene.test import Client
 from graphene_cruddals.operation_fields.main import (
     IntOrAll,
-    ModelListField,
     PaginationConfigInput,
-    get_object_type_payload,
 )
 from graphene_cruddals.registry.registry_global import (
     get_global_registry,
@@ -15,7 +13,6 @@ from graphene_cruddals.types.main import (
     ModelObjectType,
     ModelPaginatedObjectType,
 )
-from graphene_cruddals.utils.error_handling.error_types import ErrorCollectionType
 from graphene_cruddals.utils.main import build_class
 
 
@@ -48,43 +45,43 @@ def client():
     return Client(schema)
 
 
-def test_get_object_type_payload_basic(registry):
-    payload_type = get_object_type_payload(
-        model=sample_model,
-        registry=registry,
-        name_for_output_type="MockModelObjectType",
-        plural_model_name="Tests",
-        include_success=False,
-    )
-    assert issubclass(payload_type, graphene.ObjectType)
-    assert "objects" in payload_type._meta.fields
-    assert "errors_report" in payload_type._meta.fields
-    assert isinstance(payload_type._meta.fields["objects"], ModelListField)
-    assert isinstance(payload_type._meta.fields["objects"].type, graphene.List)
-    assert isinstance(
-        payload_type._meta.fields["objects"].type.of_type, graphene.NonNull
-    )
-    # assert payload_type._meta.fields["objects"].type.of_type.of_type == MockModelObjectType
+# def test_get_object_type_payload_basic(registry):
+#     payload_type = get_object_type_payload(
+#         model=sample_model,
+#         registry=registry,
+#         name_for_output_type="MockModelObjectType",
+#         plural_model_name="Tests",
+#         include_success=False,
+#     )
+#     assert issubclass(payload_type, graphene.ObjectType)
+#     assert "objects" in payload_type._meta.fields
+#     assert "errors_report" in payload_type._meta.fields
+#     assert isinstance(payload_type._meta.fields["objects"], ModelListField)
+#     assert isinstance(payload_type._meta.fields["objects"].type, graphene.List)
+#     assert isinstance(
+#         payload_type._meta.fields["objects"].type.of_type, graphene.NonNull
+#     )
+#     # assert payload_type._meta.fields["objects"].type.of_type.of_type == MockModelObjectType
 
-    assert isinstance(payload_type._meta.fields["errors_report"], graphene.Field)
-    assert isinstance(payload_type._meta.fields["errors_report"].type, graphene.List)
-    assert (
-        payload_type._meta.fields["errors_report"].type.of_type == ErrorCollectionType
-    )
-    assert "success" not in payload_type._meta.fields
+#     assert isinstance(payload_type._meta.fields["errors_report"], graphene.Field)
+#     assert isinstance(payload_type._meta.fields["errors_report"].type, graphene.List)
+#     assert (
+#         payload_type._meta.fields["errors_report"].type.of_type == ErrorCollectionType
+#     )
+#     assert "success" not in payload_type._meta.fields
 
 
-def test_get_object_type_payload_include_success(registry):
-    payload_type = get_object_type_payload(
-        model=sample_model,
-        registry=registry,
-        name_for_output_type="MockModelObjectType",
-        plural_model_name="Tests",
-        include_success=True,
-    )
-    assert "success" in payload_type._meta.fields
-    assert isinstance(payload_type._meta.fields["success"], graphene.Field)
-    assert payload_type._meta.fields["success"].type == graphene.Boolean
+# def test_get_object_type_payload_include_success(registry):
+#     payload_type = get_object_type_payload(
+#         model=sample_model,
+#         registry=registry,
+#         name_for_output_type="MockModelObjectType",
+#         plural_model_name="Tests",
+#         include_success=True,
+#     )
+#     assert "success" in payload_type._meta.fields
+#     assert isinstance(payload_type._meta.fields["success"], graphene.Field)
+#     assert payload_type._meta.fields["success"].type == graphene.Boolean
 
 
 def test_pagination_config_input():

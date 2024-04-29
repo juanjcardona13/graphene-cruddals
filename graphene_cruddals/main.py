@@ -93,26 +93,28 @@ class CruddalsBuilderConfig:
     pascal_case_name: str
 
     get_fields_for_output: Callable[[Dict[str, Any]], Dict[str, Any]]
-    output_field_converter_function: Callable[[Any, RegistryGlobal], GRAPHENE_TYPE]
+    output_field_converter_function: Callable[[str, Any, RegistryGlobal], GRAPHENE_TYPE]
 
     get_fields_for_input: Callable[[Dict[str, Any]], Dict[str, Any]]
-    input_field_converter_function: Callable[[Any, RegistryGlobal], GRAPHENE_TYPE]
+    input_field_converter_function: Callable[[str, Any, RegistryGlobal], GRAPHENE_TYPE]
 
     get_fields_for_create_input: Callable[[Dict[str, Any]], Dict[str, Any]]
     create_input_field_converter_function: Callable[
-        [Any, RegistryGlobal], GRAPHENE_TYPE
+        [str, Any, RegistryGlobal], GRAPHENE_TYPE
     ]
 
     get_fields_for_update_input: Callable[[Dict[str, Any]], Dict[str, Any]]
     update_input_field_converter_function: Callable[
-        [Any, RegistryGlobal], GRAPHENE_TYPE
+        [str, Any, RegistryGlobal], GRAPHENE_TYPE
     ]
 
     get_fields_for_filter: Callable[[Dict[str, Any]], Dict[str, Any]]
-    filter_field_converter_function: Callable[[Any, RegistryGlobal], GRAPHENE_TYPE]
+    filter_field_converter_function: Callable[[str, Any, RegistryGlobal], GRAPHENE_TYPE]
 
     get_fields_for_order_by: Callable[[Dict[str, Any]], Dict[str, Any]]
-    order_by_field_converter_function: Callable[[Any, RegistryGlobal], GRAPHENE_TYPE]
+    order_by_field_converter_function: Callable[
+        [str, Any, RegistryGlobal], GRAPHENE_TYPE
+    ]
 
     create_resolver: Callable[..., Any]
     read_resolver: Callable[..., Any]
