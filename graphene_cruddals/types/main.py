@@ -1,15 +1,19 @@
+from collections import OrderedDict
 from typing import Any, Callable, Dict, List, Literal, Tuple, Type, Union
+
 import graphene
 from graphene.types.objecttype import ObjectTypeOptions
 from graphene.types.utils import yank_fields_from_attrs
-from collections import OrderedDict
-
 from graphene_cruddals.registry.registry_global import (
     RegistryGlobal,
     get_global_registry,
 )
-from graphene_cruddals.utils.typing.custom_typing import GRAPHENE_TYPE, TypeRegistryForModelEnum, TypesMutation, TypesMutationEnum
-
+from graphene_cruddals.utils.typing.custom_typing import (
+    GRAPHENE_TYPE,
+    TypeRegistryForModelEnum,
+    TypesMutation,
+    TypesMutationEnum,
+)
 
 ALL_FIELDS = "__all__"
 
@@ -30,14 +34,15 @@ class PaginationInterface(graphene.Interface):
 
 def construct_fields(
     model: Dict[str, Any],
+    get_fields_function: Callable[[Dict[str, Any]], Dict[str, Any]],
     field_converter_function: Callable[[Any, RegistryGlobal], GRAPHENE_TYPE],
     registry: RegistryGlobal,
     only_fields: Union[List[str], Literal["__all__"], None] = None,
     exclude_fields: Union[List[str], None] = None,
 ):
-
     fields = OrderedDict()
-    for name, field in model.items():
+    final_fields = get_fields_function(model)
+    for name, field in final_fields.items():
         is_not_in_only = (
             only_fields is not None
             and only_fields != ALL_FIELDS
@@ -45,7 +50,6 @@ def construct_fields(
         )
         is_excluded = exclude_fields is not None and name in exclude_fields
         if is_not_in_only or is_excluded:
-
             continue
 
         converted = field_converter_function(field, registry)
@@ -61,26 +65,33 @@ class ModelObjectTypeOptions(ObjectTypeOptions):
 
 
 class ModelObjectType(graphene.ObjectType):
-
     @classmethod
     def __init_subclass_with_meta__(
         cls,
-        model: Dict[str, Any] = {},
+        interfaces: Tuple[Type[graphene.Interface], ...] = (),
+        possible_types: Tuple[Type[graphene.ObjectType], ...] = (),
+        default_resolver: Union[Callable, None] = None,
+        _meta: Union[ModelObjectTypeOptions, None] = None,
+        model: Dict[str, Any] = None,
         field_converter_function: Callable[
             [Any, RegistryGlobal], GRAPHENE_TYPE
         ] = lambda x, y: graphene.String(),
+        get_fields_function: Callable[[Dict[str, Any]], Dict[str, Any]] = lambda x: x,
         registry: Union[RegistryGlobal, None] = None,
         only_fields: Union[List[str], Literal["__all__"], None] = None,
         exclude_fields: Union[List[str], None] = None,
-        _meta: Union[ModelObjectTypeOptions, None] = None,
         **options,
     ):
-
         if not registry:
             registry = get_global_registry()
 
         converted_fields = construct_fields(
-            model, field_converter_function, registry, only_fields, exclude_fields
+            model,
+            get_fields_function,
+            field_converter_function,
+            registry,
+            only_fields,
+            exclude_fields,
         )
 
         model_fields = yank_fields_from_attrs(converted_fields, _as=graphene.Field)
@@ -92,13 +103,18 @@ class ModelObjectType(graphene.ObjectType):
         _meta.registry = registry
         _meta.fields = model_fields
 
-        super().__init_subclass_with_meta__(interfaces=(), _meta=_meta, **options)
+        super().__init_subclass_with_meta__(
+            interfaces=interfaces,
+            possible_types=possible_types,
+            default_resolver=default_resolver,
+            _meta=_meta,
+            **options,
+        )
 
         registry.register_model(model, "object_type", cls)
 
 
 class ModelPaginatedObjectType(graphene.ObjectType):
-
     @classmethod
     def __init_subclass_with_meta__(
         cls,
@@ -110,7 +126,7 @@ class ModelPaginatedObjectType(graphene.ObjectType):
     ):
         if not interfaces:
             interfaces = (PaginationInterface,)
-        
+
         if PaginationInterface not in interfaces:
             interfaces = (PaginationInterface,) + interfaces
 
@@ -139,14 +155,14 @@ class ModelPaginatedObjectType(graphene.ObjectType):
 
 
 class ModelInputObjectType(graphene.InputObjectType):
-
     @classmethod
     def __init_subclass_with_meta__(
         cls,
         container=None,
         _meta: Union[ModelObjectTypeOptions, None] = None,
-        model: Dict[str, Any] = {},
+        model: Dict[str, Any] = None,
         type_mutation: TypesMutation = TypesMutationEnum.CREATE_UPDATE.value,
+        get_fields_function: Callable[[Dict[str, Any]], Dict[str, Any]] = lambda x: x,
         field_converter_function: Callable[
             [Any, RegistryGlobal], GRAPHENE_TYPE
         ] = lambda x, y: graphene.String(),
@@ -176,7 +192,12 @@ class ModelInputObjectType(graphene.InputObjectType):
             registry = get_global_registry()
 
         converted_fields = construct_fields(
-            model, field_converter_function, registry, only_fields, exclude_fields
+            model,
+            get_fields_function,
+            field_converter_function,
+            registry,
+            only_fields,
+            exclude_fields,
         )
 
         model_fields = yank_fields_from_attrs(converted_fields, _as=graphene.InputField)
@@ -184,7 +205,9 @@ class ModelInputObjectType(graphene.InputObjectType):
         for name, field in model_fields.items():
             setattr(cls, name, field)
 
-        super().__init_subclass_with_meta__(container=container, _meta=_meta, name=class_name, **options)
+        super().__init_subclass_with_meta__(
+            container=container, _meta=_meta, name=class_name, **options
+        )
 
         registry.register_model(model, type_of_registry, cls)
 
@@ -195,7 +218,8 @@ class ModelSearchInputObjectType(graphene.InputObjectType):
         cls,
         container=None,
         _meta: Union[ModelObjectTypeOptions, None] = None,
-        model: Dict[str, Any] = {},
+        model: Dict[str, Any] = None,
+        get_fields_function: Callable[[Dict[str, Any]], Dict[str, Any]] = lambda x: x,
         field_converter_function: Callable[
             [Any, RegistryGlobal], GRAPHENE_TYPE
         ] = lambda x, y: graphene.String(),
@@ -207,7 +231,12 @@ class ModelSearchInputObjectType(graphene.InputObjectType):
         if not registry:
             registry = get_global_registry()
         converted_fields = construct_fields(
-            model, field_converter_function, registry, only_fields, exclude_fields
+            model,
+            get_fields_function,
+            field_converter_function,
+            registry,
+            only_fields,
+            exclude_fields,
         )
         converted_fields.update(
             {
@@ -231,7 +260,8 @@ class ModelOrderByInputObjectType(graphene.InputObjectType):
         cls,
         container=None,
         _meta: Union[ModelObjectTypeOptions, None] = None,
-        model: Dict[str, Any] = {},
+        model: Dict[str, Any] = None,
+        get_fields_function: Callable[[Dict[str, Any]], Dict[str, Any]] = lambda x: x,
         field_converter_function: Callable[
             [Any, RegistryGlobal], GRAPHENE_TYPE
         ] = lambda x, y: graphene.String(),
@@ -243,7 +273,12 @@ class ModelOrderByInputObjectType(graphene.InputObjectType):
         if not registry:
             registry = get_global_registry()
         converted_fields = construct_fields(
-            model, field_converter_function, registry, only_fields, exclude_fields
+            model,
+            get_fields_function,
+            field_converter_function,
+            registry,
+            only_fields,
+            exclude_fields,
         )
         model_fields = yank_fields_from_attrs(converted_fields, _as=graphene.InputField)
         for name, field in model_fields.items():

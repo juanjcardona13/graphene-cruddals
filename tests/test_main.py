@@ -678,7 +678,17 @@ def mock_converter_field_function(field, registry: RegistryGlobal) -> GRAPHENE_T
     return graphene.String()
 
 
+def mock_get_fields(model):
+    return model
+
+
 dict_converters = {
+    "get_fields_for_output": mock_get_fields,
+    "get_fields_for_input": mock_get_fields,
+    "get_fields_for_create_input": mock_get_fields,
+    "get_fields_for_update_input": mock_get_fields,
+    "get_fields_for_filter": mock_get_fields,
+    "get_fields_for_order_by": mock_get_fields,
     "output_field_converter_function": mock_converter_field_function,
     "input_field_converter_function": mock_converter_field_function,
     "create_input_field_converter_function": mock_converter_field_function,

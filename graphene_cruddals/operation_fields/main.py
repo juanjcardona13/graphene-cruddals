@@ -60,20 +60,6 @@ class PaginationConfigInput(graphene.InputObjectType):
     items_per_page = graphene.InputField(IntOrAll, default_value="All")  # type: ignore
 
 
-class PaginationInterface(graphene.Interface):
-    """
-    Defines a GraphQL Interface for pagination-related attributes.
-    """
-
-    total = graphene.Field(graphene.Int)
-    page = graphene.Field(graphene.Int)
-    pages = graphene.Field(graphene.Int)
-    has_next = graphene.Field(graphene.Boolean)
-    has_prev = graphene.Field(graphene.Boolean)
-    index_start_obj = graphene.Field(graphene.Int)
-    index_end_obj = graphene.Field(graphene.Int)
-
-
 class ModelCreateUpdateField(graphene.Field):
     def __init__(
         self,

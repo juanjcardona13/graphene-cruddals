@@ -91,16 +91,29 @@ class CruddalsBuilderConfig:
 
     model: Dict[str, Any]
     pascal_case_name: str
+
+    get_fields_for_output: Callable[[Dict[str, Any]], Dict[str, Any]]
     output_field_converter_function: Callable[[Any, RegistryGlobal], GRAPHENE_TYPE]
+
+    get_fields_for_input: Callable[[Dict[str, Any]], Dict[str, Any]]
     input_field_converter_function: Callable[[Any, RegistryGlobal], GRAPHENE_TYPE]
+
+    get_fields_for_create_input: Callable[[Dict[str, Any]], Dict[str, Any]]
     create_input_field_converter_function: Callable[
         [Any, RegistryGlobal], GRAPHENE_TYPE
     ]
+
+    get_fields_for_update_input: Callable[[Dict[str, Any]], Dict[str, Any]]
     update_input_field_converter_function: Callable[
         [Any, RegistryGlobal], GRAPHENE_TYPE
     ]
+
+    get_fields_for_filter: Callable[[Dict[str, Any]], Dict[str, Any]]
     filter_field_converter_function: Callable[[Any, RegistryGlobal], GRAPHENE_TYPE]
+
+    get_fields_for_order_by: Callable[[Dict[str, Any]], Dict[str, Any]]
     order_by_field_converter_function: Callable[[Any, RegistryGlobal], GRAPHENE_TYPE]
+
     create_resolver: Callable[..., Any]
     read_resolver: Callable[..., Any]
     update_resolver: Callable[..., Any]
@@ -109,6 +122,7 @@ class CruddalsBuilderConfig:
     activate_resolver: Callable[..., Any]
     list_resolver: Callable[..., Any]
     search_resolver: Callable[..., Any]
+
     plural_pascal_case_name: Union[str, None] = None
     prefix: str = ""
     suffix: str = ""
@@ -237,12 +251,12 @@ class BaseCruddals:
             Tuple[List[Callable], List[Callable]]: A tuple containing lists of pre and post resolver functions.
         """
         pre_resolves_model = self.get_function_lists(
-            f"pre_{name_function}",
-            extra_pre_post_resolvers,  # type: ignore
+            f"pre_{name_function}",  # type: ignore
+            extra_pre_post_resolvers,
         )
         post_resolves_model = self.get_function_lists(
-            f"post_{name_function}",
-            extra_pre_post_resolvers,  # type: ignore
+            f"post_{name_function}",  # type: ignore
+            extra_pre_post_resolvers,
         )
         return pre_resolves_model, post_resolves_model
 
@@ -635,6 +649,7 @@ class BuilderCruddalsModel(BaseCruddals):
             model=self.model,
             pascal_case_name=self.model_name_in_different_case["pascal_case"],
             registry=self.registry,
+            get_fields_function=self.cruddals_config.get_fields_for_output,
             field_converter_function=self.cruddals_config.output_field_converter_function,
             meta_attrs=dict_of_internal_interface_attr.pop(
                 MetaCruddalsInternalInterfaceNames.META_OBJECT_TYPE.value, None
@@ -660,6 +675,7 @@ class BuilderCruddalsModel(BaseCruddals):
             model=self.model,
             pascal_case_name=self.model_name_in_different_case["pascal_case"],
             registry=self.registry,
+            get_fields_function=self.cruddals_config.get_fields_for_input,
             field_converter_function=self.cruddals_config.input_field_converter_function,
             type_mutation=TypesMutationEnum.CREATE_UPDATE.value,
             meta_attrs=dict_of_internal_interface_attr.pop(
@@ -677,6 +693,7 @@ class BuilderCruddalsModel(BaseCruddals):
             model=self.model,
             pascal_case_name=self.model_name_in_different_case["pascal_case"],
             registry=self.registry,
+            get_fields_function=self.cruddals_config.get_fields_for_create_input,
             field_converter_function=self.cruddals_config.create_input_field_converter_function,
             type_mutation=TypesMutationEnum.CREATE.value,
             meta_attrs=dict_of_internal_interface_attr.pop(
@@ -695,6 +712,7 @@ class BuilderCruddalsModel(BaseCruddals):
             model=self.model,
             pascal_case_name=self.model_name_in_different_case["pascal_case"],
             registry=self.registry,
+            get_fields_function=self.cruddals_config.get_fields_for_update_input,
             field_converter_function=self.cruddals_config.update_input_field_converter_function,
             type_mutation=TypesMutationEnum.UPDATE.value,
             meta_attrs=dict_of_internal_interface_attr.pop(
@@ -713,6 +731,7 @@ class BuilderCruddalsModel(BaseCruddals):
             model=self.model,
             pascal_case_name=self.model_name_in_different_case["pascal_case"],
             registry=self.registry,
+            get_fields_function=self.cruddals_config.get_fields_for_filter,
             field_converter_function=self.cruddals_config.filter_field_converter_function,
             meta_attrs=dict_of_internal_interface_attr.pop(
                 MetaCruddalsInternalInterfaceNames.META_FILTER_INPUT_OBJECT_TYPE.value,
@@ -730,6 +749,7 @@ class BuilderCruddalsModel(BaseCruddals):
             model=self.model,
             pascal_case_name=self.model_name_in_different_case["pascal_case"],
             registry=self.registry,
+            get_fields_function=self.cruddals_config.get_fields_for_order_by,
             field_converter_function=self.cruddals_config.order_by_field_converter_function,
             meta_attrs=dict_of_internal_interface_attr.pop(
                 MetaCruddalsInternalInterfaceNames.META_ORDER_BY_INPUT_OBJECT_TYPE.value,
@@ -906,6 +926,11 @@ class BuilderCruddalsModel(BaseCruddals):
         resolver = self.wrap_resolver_with_pre_post_resolvers(
             config.search_resolver, extra_pre_post_resolvers, name_function
         )
+        print(self.model_name_in_different_case["plural_pascal_case"])
+        print(self.model)
+        print(self.registry)
+        print(resolver)
+        print(extra_arguments)
         return ModelSearchField(
             plural_model_name=self.model_name_in_different_case["plural_pascal_case"],
             model=self.model,
@@ -965,25 +990,24 @@ class CruddalsModel(SubclassWithMeta):
         exclude_functions: Optional[Tuple[FunctionType, ...]] = None,
         **kwargs,
     ):
-        if config is None:
-            raise ValueError("config is required")
-        if not functions:
-            functions = ()
-        if not exclude_functions:
-            exclude_functions = ()
+        if config:
+            if not functions:
+                functions = ()
+            if not exclude_functions:
+                exclude_functions = ()
 
-        validate_list_func_cruddals(functions, exclude_functions)
+            validate_list_func_cruddals(functions, exclude_functions)
 
-        if not config.registry:
-            config.registry = get_global_registry(f"{config.prefix}{config.suffix}")
+            if not config.registry:
+                config.registry = get_global_registry(f"{config.prefix}{config.suffix}")
 
-        cls._initialize_attributes()
-        cls._build_cruddals_model(config)
-        cls._build_dict_for_operation_fields(functions, exclude_functions)
-        cls._build_schema_query_mutation()
-        config.registry.register_model(
-            config.model, TypeRegistryForModelEnum.CRUDDALS.value, cls
-        )
+            cls._initialize_attributes()
+            cls._build_cruddals_model(config)
+            cls._build_dict_for_operation_fields(functions, exclude_functions)
+            cls._build_schema_query_mutation()
+            config.registry.register_model(
+                config.model, TypeRegistryForModelEnum.CRUDDALS.value, cls
+            )
 
         super().__init_subclass_with_meta__(**kwargs)
 
