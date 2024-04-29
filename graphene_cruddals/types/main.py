@@ -75,7 +75,7 @@ class ModelObjectType(graphene.ObjectType):
         model: Dict[str, Any] = None,
         field_converter_function: Callable[
             [str, Any, RegistryGlobal], GRAPHENE_TYPE
-        ] = lambda x, y: graphene.String(),
+        ] = lambda x, y, z: graphene.String(),
         get_fields_function: Callable[[Dict[str, Any]], Dict[str, Any]] = lambda x: x,
         registry: Union[RegistryGlobal, None] = None,
         only_fields: Union[List[str], Literal["__all__"], None] = None,
@@ -112,6 +112,10 @@ class ModelObjectType(graphene.ObjectType):
         )
 
         registry.register_model(model, "object_type", cls)
+
+    @classmethod
+    def get_objects(cls, objects, info):
+        return objects
 
 
 class ModelPaginatedObjectType(graphene.ObjectType):
@@ -181,12 +185,12 @@ class ModelInputObjectType(graphene.InputObjectType):
             type_of_registry = (
                 TypeRegistryForModelEnum.INPUT_OBJECT_TYPE_FOR_CREATE.value
             )  # "input_object_type_for_create"
-            class_name = f"Create{class_name}"
+            # class_name = f"Create{class_name}"
         elif type_mutation == TypesMutationEnum.UPDATE.value:
             type_of_registry = (
                 TypeRegistryForModelEnum.INPUT_OBJECT_TYPE_FOR_UPDATE.value
             )  # "input_object_type_for_update"
-            class_name = f"Update{class_name}"
+            # class_name = f"Update{class_name}"
 
         if not registry:
             registry = get_global_registry()

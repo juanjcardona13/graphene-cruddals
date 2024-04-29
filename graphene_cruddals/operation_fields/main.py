@@ -34,10 +34,13 @@ def get_object_type_payload(
     Returns:
         type: The dynamically generated GraphQL ObjectType class representing the payload.
     """
+    model_object_type = get_converted_model(
+        model, registry, TypeRegistryForModelEnum.OBJECT_TYPE.value
+    )
     output_fields: Dict[str, Union[ModelListField, graphene.Field]] = OrderedDict(
         {
-            "objects": ModelListField(
-                "objects", model, registry
+            "objects": graphene.Field(
+                graphene.List(model_object_type)
             ),  # TODa: If I want that the name of the field is the plural_model_name, I need to change the name of the field to plural_model_name, Missing check impact
             "errors_report": graphene.Field(graphene.List(ErrorCollectionType)),
         }
@@ -105,6 +108,14 @@ class ModelCreateUpdateField(graphene.Field):
             **extra_args,
         )
 
+    def wrap_resolve(self, parent_resolver):
+        resolver = super().wrap_resolve(parent_resolver)
+        if resolver is not None:
+            return resolver
+        else:
+            print("resolver is None")
+            raise ValueError("resolver is None")
+
 
 class ModelReadField(graphene.Field):
     def __init__(
@@ -141,6 +152,14 @@ class ModelReadField(graphene.Field):
             resolver=resolver,
             **extra_args,
         )
+
+    def wrap_resolve(self, parent_resolver):
+        resolver = super().wrap_resolve(parent_resolver)
+        if resolver is not None:
+            return resolver
+        else:
+            print("resolver is None")
+            raise ValueError("resolver is None")
 
 
 class ModelDeleteField(graphene.Field):
@@ -185,6 +204,14 @@ class ModelDeleteField(graphene.Field):
             **extra_args,
         )
 
+    def wrap_resolve(self, parent_resolver):
+        resolver = super().wrap_resolve(parent_resolver)
+        if resolver is not None:
+            return resolver
+        else:
+            print("resolver is None")
+            raise ValueError("resolver is None")
+
 
 class ModelDeactivateField(graphene.Field):
     def __init__(
@@ -227,6 +254,14 @@ class ModelDeactivateField(graphene.Field):
             resolver=resolver,
             **extra_args,
         )
+
+    def wrap_resolve(self, parent_resolver):
+        resolver = super().wrap_resolve(parent_resolver)
+        if resolver is not None:
+            return resolver
+        else:
+            print("resolver is None")
+            raise ValueError("resolver is None")
 
 
 class ModelActivateField(graphene.Field):
@@ -271,6 +306,14 @@ class ModelActivateField(graphene.Field):
             **extra_args,
         )
 
+    def wrap_resolve(self, parent_resolver):
+        resolver = super().wrap_resolve(parent_resolver)
+        if resolver is not None:
+            return resolver
+        else:
+            print("resolver is None")
+            raise ValueError("resolver is None")
+
 
 class ModelListField(graphene.Field):
     def __init__(
@@ -294,6 +337,14 @@ class ModelListField(graphene.Field):
             resolver=resolver,
             **extra_args,
         )
+
+    def wrap_resolve(self, parent_resolver):
+        resolver = super().wrap_resolve(parent_resolver)
+        if resolver is not None and not hasattr(resolver, "func"):
+            return resolver
+        else:
+            print("resolver is None")
+            raise ValueError("resolver is None")
 
 
 class ModelSearchField(graphene.Field):
@@ -350,10 +401,24 @@ class ModelSearchField(graphene.Field):
             ),
         }
 
+        name = (
+            f"search{plural_model_name}"
+            if "name" not in extra_args
+            else extra_args.pop("name")
+        )
+
         super().__init__(
             model_as_paginated_object_type,
-            name=f"search{plural_model_name}",
+            name=name,
             args=args,
             resolver=resolver,
             **extra_args,
         )
+
+    def wrap_resolve(self, parent_resolver):
+        resolver = super().wrap_resolve(parent_resolver)
+        if resolver is not None and not hasattr(resolver, "func"):
+            return resolver
+        else:
+            print("resolver is None")
+            raise ValueError("resolver is None")
