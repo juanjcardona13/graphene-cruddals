@@ -417,8 +417,8 @@ class ModelSearchField(graphene.Field):
 
     def wrap_resolve(self, parent_resolver):
         resolver = super().wrap_resolve(parent_resolver)
-        if resolver is not None and not hasattr(resolver, "func"):
+        if resolver is not None:
             return resolver
         else:
             print("resolver is None")
-            raise ValueError("resolver is None")
+            # raise ValueError("resolver is None")
