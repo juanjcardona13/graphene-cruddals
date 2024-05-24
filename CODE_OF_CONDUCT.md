@@ -2,7 +2,7 @@
 
 ## 👥 Our Commitment
 
-At CRUDDALS, we **commit** to maintaining a **safe**, **respectful**, **welcoming**, and **inclusive** environment for all members of our community. We seek to **promote** a culture of **diversity**, **collaboration**, and **continuous learning**.
+At Graphene CRUDDALS, we **commit** to maintaining a **safe**, **respectful**, **welcoming**, and **inclusive** environment for all members of our community. We seek to **promote** a culture of **diversity**, **collaboration**, and **continuous learning**.
 
 ## Our Expectations 📜
 

@@ -185,12 +185,14 @@ class ModelInputObjectType(graphene.InputObjectType):
             type_of_registry = (
                 TypeRegistryForModelEnum.INPUT_OBJECT_TYPE_FOR_CREATE.value
             )  # "input_object_type_for_create"
-            # class_name = f"Create{class_name}"
+            if not class_name.startswith("Create"):
+                class_name = f"Create{class_name}"
         elif type_mutation == TypesMutationEnum.UPDATE.value:
             type_of_registry = (
                 TypeRegistryForModelEnum.INPUT_OBJECT_TYPE_FOR_UPDATE.value
             )  # "input_object_type_for_update"
-            # class_name = f"Update{class_name}"
+            if not class_name.startswith("Update"):
+                class_name = f"Update{class_name}"
 
         if not registry:
             registry = get_global_registry()

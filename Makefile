@@ -19,11 +19,3 @@ format:
 .PHONY: lint ## Lint code
 lint:
 	ruff graphene_cruddals tests
-
-.PHONY: docs ## Generate docs
-docs: dev-setup
-	cd docs && make install && make html
-
-.PHONY: docs-live ## Generate docs with live reloading
-docs-live: dev-setup
-	cd docs && make install && make livehtml
