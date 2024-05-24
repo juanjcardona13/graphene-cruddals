@@ -113,8 +113,7 @@ class ModelCreateUpdateField(graphene.Field):
         if resolver is not None:
             return resolver
         else:
-            print("resolver is None")
-            raise ValueError("resolver is None")
+            raise ValueError("resolver is None for ModelCreateUpdateField")
 
 
 class ModelReadField(graphene.Field):
@@ -158,8 +157,7 @@ class ModelReadField(graphene.Field):
         if resolver is not None:
             return resolver
         else:
-            print("resolver is None")
-            raise ValueError("resolver is None")
+            raise ValueError("resolver is None for ModelReadField")
 
 
 class ModelDeleteField(graphene.Field):
@@ -209,8 +207,7 @@ class ModelDeleteField(graphene.Field):
         if resolver is not None:
             return resolver
         else:
-            print("resolver is None")
-            raise ValueError("resolver is None")
+            raise ValueError("resolver is None for ModelDeleteField")
 
 
 class ModelDeactivateField(graphene.Field):
@@ -260,8 +257,7 @@ class ModelDeactivateField(graphene.Field):
         if resolver is not None:
             return resolver
         else:
-            print("resolver is None")
-            raise ValueError("resolver is None")
+            raise ValueError("resolver is None for ModelDeactivateField")
 
 
 class ModelActivateField(graphene.Field):
@@ -311,8 +307,7 @@ class ModelActivateField(graphene.Field):
         if resolver is not None:
             return resolver
         else:
-            print("resolver is None")
-            raise ValueError("resolver is None")
+            raise ValueError("resolver is None for ModelActivateField")
 
 
 class ModelListField(graphene.Field):
@@ -343,8 +338,7 @@ class ModelListField(graphene.Field):
         if resolver is not None and not hasattr(resolver, "func"):
             return resolver
         else:
-            print("resolver is None")
-            raise ValueError("resolver is None")
+            raise ValueError("resolver is None for ModelListField")
 
 
 class ModelSearchField(graphene.Field):
@@ -420,5 +414,4 @@ class ModelSearchField(graphene.Field):
         if resolver is not None:
             return resolver
         else:
-            print("resolver is None")
-            # raise ValueError("resolver is None")
+            raise ValueError("resolver is None for ModelSearchField")
