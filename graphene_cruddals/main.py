@@ -84,7 +84,7 @@ class CruddalsBuilderConfig:
         plural_pascal_case_name (Union[str, None]): Plural form of the PascalCase name, if not provided, it uses the PascalCase name with an 's' suffix.
         prefix (str): Prefix to be added to model name, defaults to an empty string.
         suffix (str): Suffix to be added to model name, defaults to an empty string.
-        cruddals_interfaces (Union[tuple[Type[Any], ...], None]): Tuple of CRUDDALS interfaces to extend the functionality of CRUDDALS, defaults to None.
+        cruddals_interfaces (Union[Tuple[Type[Any], ...], None]): Tuple of CRUDDALS interfaces to extend the functionality of CRUDDALS, defaults to None.
         exclude_cruddals_interfaces (Union[Tuple[str, ...], None]): Tuple of cruddals interface names to exclude, defaults to None.
         registry (Union[RegistryGlobal, None]): Global registry for models, defaults to None, if not provided, it uses the global registry.
     """
@@ -128,7 +128,7 @@ class CruddalsBuilderConfig:
     plural_pascal_case_name: Union[str, None] = None
     prefix: str = ""
     suffix: str = ""
-    cruddals_interfaces: Union[tuple[Type[Any], ...], None] = None
+    cruddals_interfaces: Union[Tuple[Type[Any], ...], None] = None
     exclude_cruddals_interfaces: Union[Tuple[str, ...], None] = None
     registry: Union[RegistryGlobal, None] = None
 
@@ -548,7 +548,7 @@ class BuilderCruddalsModel(BaseCruddals):
 
     def get_dict_of_internal_interface_attr(
         self,
-        cruddals_interfaces: Union[tuple[Type[Any], ...], None] = None,
+        cruddals_interfaces: Union[Tuple[Type[Any], ...], None] = None,
         exclude_cruddals_interfaces: Union[Tuple[str, ...], None] = None,
     ) -> Dict[ListInternalInterfaceNameCruddals, OrderedDict[str, Any]]:
         query_fields = [
@@ -969,16 +969,18 @@ class CruddalsModel(SubclassWithMeta):
     Mutation: Union[Type[graphene.ObjectType], None] = None
     schema: graphene.Schema
     operation_fields_for_queries: Dict[
-        str, graphene.Field | ModelReadField | ModelListField | ModelSearchField
+        str, Union[graphene.Field, ModelReadField, ModelListField, ModelSearchField]
     ]
     operation_fields_for_mutations: Union[
         Dict[
             str,
-            graphene.Field
-            | ModelCreateUpdateField
-            | ModelDeleteField
-            | ModelDeactivateField
-            | ModelActivateField,
+            Union[
+                graphene.Field,
+                ModelCreateUpdateField,
+                ModelDeleteField,
+                ModelDeactivateField,
+                ModelActivateField,
+            ],
         ],
         None,
     ] = None

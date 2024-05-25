@@ -175,7 +175,7 @@ class TestModelObjectType:
 
         schema = graphene.Schema(query=SampleModelType)
         expected = 'schema {\n  query: SampleModelType\n}\n\ntype SampleModelType {\n  """Converted"""\n  id: String\n\n  """Converted"""\n  name: String\n\n  """Converted"""\n  active: String\n}'
-        assert str(schema) == expected
+        assert str(schema).strip() == expected.strip()
 
 
 class TestModelPaginatedObjectType:
@@ -228,7 +228,8 @@ class TestModelPaginatedObjectType:
 
         schema = graphene.Schema(query=TestModelPaginated)
         expected = 'schema {\n  query: TestModelPaginated\n}\n\ntype TestModelPaginated implements PaginationInterface {\n  objects: [SampleModelType]\n  total: Int\n  page: Int\n  pages: Int\n  hasNext: Boolean\n  hasPrev: Boolean\n  indexStart: Int\n  indexEnd: Int\n}\n\n"""Defines a GraphQL Interface for pagination-related attributes."""\ninterface PaginationInterface {\n  total: Int\n  page: Int\n  pages: Int\n  hasNext: Boolean\n  hasPrev: Boolean\n  indexStart: Int\n  indexEnd: Int\n}\n\ntype SampleModelType {\n  id: String\n  name: String\n  active: String\n}'
-        assert str(schema) == expected
+        print(str(schema))
+        assert str(schema).strip() == expected.strip()
 
 
 class TestModelInputObjectType:

@@ -1,15 +1,23 @@
 import re
-import graphene
-from typing import Any, List, OrderedDict, Dict, Literal, Tuple, Type, Union
 from collections.abc import Iterable
-from graphene_cruddals.utils.typing.custom_typing import FunctionType, NameCaseType, RootFieldsType, TypeRegistryForModel
+from typing import Any, Dict, List, Literal, OrderedDict, Tuple, Type, Union
+
+import graphene
 from graphene_cruddals.registry.registry_global import RegistryGlobal
+from graphene_cruddals.utils.typing.custom_typing import (
+    FunctionType,
+    NameCaseType,
+    RootFieldsType,
+    TypeRegistryForModel,
+)
+
 
 class Promise:
     """
     Base class for the proxy class created in the closure of the lazy function.
     It's used to recognize promises in code.
     """
+
     pass
 
 
@@ -30,13 +38,13 @@ def build_class(name: str, bases: tuple = (), attrs: Union[dict, None] = None) -
     return type(name, bases, attrs)
 
 
-def delete_keys(obj: dict, keys: list[str]) -> dict:
+def delete_keys(obj: dict, keys: List[str]) -> dict:
     """
     Deletes the specified keys from the given dictionary.
 
     Args:
         obj (dict): The dictionary from which keys will be deleted.
-        keys (list[str]): The list of keys to be deleted.
+        keys (List[str]): The list of keys to be deleted.
 
     Returns:
         dict: The modified dictionary with the specified keys removed.
@@ -66,10 +74,10 @@ def is_iterable(obj: Any, exclude_string=True) -> bool:
 def _camelize_django_str(string: str) -> str:
     """
     Converts a string to camel case if it is an instance of str.
-    
+
     Parameters:
         string (str): The string to be converted.
-        
+
     Returns:
         str: The converted string in camel case if it is an instance of str, otherwise returns the original string.
     """
@@ -129,13 +137,17 @@ def get_separator(s: str) -> str:
         return ""
 
 
-def transform_string_with_separator(s: str, type: Literal["PascalCase", "camelCase", "snake_case", "kebab-case", "lowercase"], actual_separator: str) -> str:
+def transform_string_with_separator(
+    s: str,
+    type: Literal["PascalCase", "camelCase", "snake_case", "kebab-case", "lowercase"],
+    actual_separator: str,
+) -> str:
     """
     Transform the input string based on the specified type and actual separator.
 
     Args:
         s (str): The input string to be transformed.
-        type (Literal["PascalCase", "camelCase", "snake_case", "kebab-case", "lowercase"]): 
+        type (Literal["PascalCase", "camelCase", "snake_case", "kebab-case", "lowercase"]):
             The type of transformation to be applied. Valid options are:
             - "PascalCase": Convert the string to PascalCase.
             - "camelCase": Convert the string to camelCase.
@@ -158,7 +170,8 @@ def transform_string_with_separator(s: str, type: Literal["PascalCase", "camelCa
             return "".join(word.lower() for word in s.split(actual_separator))
         elif type == "camelCase":
             return (
-                s[0].lower() + "".join(word.title() for word in s.split(actual_separator))[1:]
+                s[0].lower()
+                + "".join(word.title() for word in s.split(actual_separator))[1:]
             )
         else:
             return "".join(word for word in s.split(actual_separator))
@@ -166,13 +179,16 @@ def transform_string_with_separator(s: str, type: Literal["PascalCase", "camelCa
         raise ValueError("actual_separator cannot be empty.")
 
 
-def transform_string( s: Union[str, bytes], type: Literal["PascalCase", "camelCase", "snake_case", "kebab-case", "lowercase"], ) -> str:
+def transform_string(
+    s: Union[str, bytes],
+    type: Literal["PascalCase", "camelCase", "snake_case", "kebab-case", "lowercase"],
+) -> str:
     """
     Transform the input string based on the specified type.
 
     Args:
         s (Union[str, bytes]): The input string to be transformed.
-        type (Literal["PascalCase", "camelCase", "snake_case", "kebab-case", "lowercase"]): 
+        type (Literal["PascalCase", "camelCase", "snake_case", "kebab-case", "lowercase"]):
             The type of transformation to be applied. Valid options are:
             - "PascalCase": Convert the string to PascalCase.
             - "camelCase": Convert the string to camelCase.
@@ -206,7 +222,13 @@ def transform_string( s: Union[str, bytes], type: Literal["PascalCase", "camelCa
             return s
 
 
-def merge_dict(source: dict, destination: dict, overwrite: bool = False, keep_both: bool = False, path: Union[list[str], None] = None) -> Union[dict, OrderedDict]:
+def merge_dict(
+    source: dict,
+    destination: dict,
+    overwrite: bool = False,
+    keep_both: bool = False,
+    path: Union[List[str], None] = None,
+) -> Union[dict, OrderedDict]:
     """
     Merge two dictionaries recursively.
 
@@ -215,7 +237,7 @@ def merge_dict(source: dict, destination: dict, overwrite: bool = False, keep_bo
         destination (dict): The dictionary to merge into.
         overwrite (bool, optional): If True, overwrite values in destination with values from source. Defaults to False.
         keep_both (bool, optional): If True, keep both values from source and destination in case of conflicts. Defaults to False.
-        path (Union[list[str], None], optional): The path to the current nested dictionary. Defaults to None.
+        path (Union[List[str], None], optional): The path to the current nested dictionary. Defaults to None.
 
     Returns:
         Union[dict, OrderedDict]: The merged dictionary.
@@ -227,7 +249,9 @@ def merge_dict(source: dict, destination: dict, overwrite: bool = False, keep_bo
 
     for key in destination:
         if key in source:
-            new_destination[key] = merge_nested_dicts(source, destination, key, overwrite, keep_both, path)
+            new_destination[key] = merge_nested_dicts(
+                source, destination, key, overwrite, keep_both, path
+            )
         else:
             new_destination[key] = destination[key]
 
@@ -238,7 +262,14 @@ def merge_dict(source: dict, destination: dict, overwrite: bool = False, keep_bo
     return new_destination
 
 
-def merge_nested_dicts(source: dict, destination: dict, key: str, overwrite: bool, keep_both: bool, path: list[str]) -> Any:
+def merge_nested_dicts(
+    source: dict,
+    destination: dict,
+    key: str,
+    overwrite: bool,
+    keep_both: bool,
+    path: List[str],
+) -> Any:
     """
     Merge nested dictionaries by recursively merging their key-value pairs.
 
@@ -248,7 +279,7 @@ def merge_nested_dicts(source: dict, destination: dict, key: str, overwrite: boo
         key (str): The key to merge.
         overwrite (bool): Flag indicating whether to overwrite the destination value with the source value if there is a conflict.
         keep_both (bool): Flag indicating whether to keep both values if there is a conflict.
-        path (list[str]): The path of keys leading to the current key.
+        path (List[str]): The path of keys leading to the current key.
 
     Returns:
         Any: The merged value.
@@ -258,7 +289,9 @@ def merge_nested_dicts(source: dict, destination: dict, key: str, overwrite: boo
 
     """
     if isinstance(destination[key], dict) and isinstance(source[key], dict):
-        return merge_dict(source[key], destination[key], overwrite, keep_both, path + [str(key)])
+        return merge_dict(
+            source[key], destination[key], overwrite, keep_both, path + [str(key)]
+        )
     elif destination[key] == source[key]:
         return destination[key]
     else:
@@ -282,13 +315,17 @@ def merge_both_values(value1: Any, value2: Any) -> List[Any]:
         List[Any]: A list containing both values.
 
     """
-    if isinstance(value1, (list, tuple, set)) and isinstance(value2, (list, tuple, set)):
+    if isinstance(value1, (list, tuple, set)) and isinstance(
+        value2, (list, tuple, set)
+    ):
         return list(value1) + list(value2)
     else:
         return [value1, value2]
 
 
-def get_name_of_model_in_different_case(name_model:str, name_model_plural="", prefix="", suffix="") -> NameCaseType:
+def get_name_of_model_in_different_case(
+    name_model: str, name_model_plural="", prefix="", suffix=""
+) -> NameCaseType:
     """
     Get the name of a model in different cases.
 
@@ -311,12 +348,14 @@ def get_name_of_model_in_different_case(name_model:str, name_model_plural="", pr
         raise ValueError("name_model cannot be empty.")
     if not name_model_plural:
         name_model_plural = name_model + "s"
-    
+
     camel_case_name_model = transform_string(name_model, "camelCase")
     camel_case_name_model_plural = transform_string(name_model_plural, "camelCase")
 
     pascal_case_name_model = transform_string(camel_case_name_model, "PascalCase")
-    pascal_case_name_model_plural = transform_string(camel_case_name_model_plural, "PascalCase")
+    pascal_case_name_model_plural = transform_string(
+        camel_case_name_model_plural, "PascalCase"
+    )
 
     prefix_lower = prefix.lower()
     prefix_capitalize = prefix.capitalize()
@@ -331,7 +370,9 @@ def get_name_of_model_in_different_case(name_model:str, name_model_plural="", pr
     plural_camel_case = f"{prefix_lower}{pascal_case_name_model_plural if prefix else camel_case_name_model_plural}{suffix_capitalize}"
 
     pascal_case = f"{prefix_capitalize}{pascal_case_name_model}{suffix_capitalize}"
-    plural_pascal_case = f"{prefix_capitalize}{pascal_case_name_model_plural}{suffix_capitalize}"
+    plural_pascal_case = (
+        f"{prefix_capitalize}{pascal_case_name_model_plural}{suffix_capitalize}"
+    )
 
     return {
         "snake_case": snake_case,
@@ -343,7 +384,11 @@ def get_name_of_model_in_different_case(name_model:str, name_model_plural="", pr
     }
 
 
-def exists_conversion_for_model(model: Dict[str, Any], registry: RegistryGlobal, type_of_registry: TypeRegistryForModel) -> bool:
+def exists_conversion_for_model(
+    model: Dict[str, Any],
+    registry: RegistryGlobal,
+    type_of_registry: TypeRegistryForModel,
+) -> bool:
     """
     Check if there exists a conversion for the given model in the registry.
 
@@ -361,7 +406,11 @@ def exists_conversion_for_model(model: Dict[str, Any], registry: RegistryGlobal,
     return False
 
 
-def get_converted_model(model: Dict[str, Any], registry: RegistryGlobal, type_of_registry: TypeRegistryForModel):
+def get_converted_model(
+    model: Dict[str, Any],
+    registry: RegistryGlobal,
+    type_of_registry: TypeRegistryForModel,
+):
     """
     Get the converted model for a given registry and type.
 

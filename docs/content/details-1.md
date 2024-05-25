@@ -96,7 +96,7 @@ Si, el usuario debe de conocer esta dataclass:
       plural_pascal_case_name: Union[str, None] = None
       prefix: str = ""
       suffix: str = ""
-      cruddals_interfaces: Union[tuple[Type[Any], ...], None] = None
+      cruddals_interfaces: Union[Tuple[Type[Any], ...], None] = None
       exclude_cruddals_interfaces: Union[Tuple[str, ...], None] = None
       registry: Union[RegistryGlobal, None] = None
 ```

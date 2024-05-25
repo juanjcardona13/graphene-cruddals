@@ -1,5 +1,10 @@
 from typing import Any, Dict, Hashable, Union
-from graphene_cruddals.utils.typing.custom_typing import GRAPHENE_TYPE, TypeRegistryForField, TypeRegistryForModel
+
+from graphene_cruddals.utils.typing.custom_typing import (
+    GRAPHENE_TYPE,
+    TypeRegistryForField,
+    TypeRegistryForModel,
+)
 
 
 class RegistryGlobal:
@@ -19,7 +24,9 @@ class RegistryGlobal:
         self._model_registry = {}
         self._field_registry = {}
 
-    def register_model(self, model: Any, type_to_registry: TypeRegistryForModel, value: Any):
+    def register_model(
+        self, model: Any, type_to_registry: TypeRegistryForModel, value: Any
+    ):
         """
         Registers a model with a specific class under a given type registry.
 
@@ -65,7 +72,12 @@ class RegistryGlobal:
         """
         return self._field_registry
 
-    def register_field(self, field: Any, type_to_registry: TypeRegistryForField, converted: GRAPHENE_TYPE):
+    def register_field(
+        self,
+        field: Any,
+        type_to_registry: TypeRegistryForField,
+        converted: GRAPHENE_TYPE,
+    ):
         """
         Registers a field in the registry.
 
@@ -121,7 +133,7 @@ def get_global_registry(name_registry: Union[str, None] = None) -> RegistryGloba
 
     Args:
         name_registry (Union[str, None]): The name of the registry to retrieve or create.
-    
+
     Returns:
         RegistryGlobal: The global registry instance.
     """
