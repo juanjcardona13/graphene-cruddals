@@ -5,8 +5,6 @@
 
 👩🏽‍💻 🚀 👨🏽‍💻  
 **Build your own library to streamline trivial code for CRUD operations.**  
-????
-
 
 
 <sub>Built with ❤︎ by [Juan J Cardona](https://github.com/juanjcardona13)</sub>
