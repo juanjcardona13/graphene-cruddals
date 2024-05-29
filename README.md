@@ -8,6 +8,8 @@
 
 [![PyPI](https://img.shields.io/pypi/v/graphene-cruddals?style=flat-&color=00559c&label=pypi&logo=python&logoColor=white)](https://pypi.org/project/graphene-cruddals/)
 [![GitHub License](https://img.shields.io/github/license/juanjcardona13/graphene-cruddals?style=flat&color=4c1)](https://github.com/juanjcardona13/graphene-cruddals/blob/main/LICENSE)  
+[![Codecov](https://img.shields.io/codecov/c/gh/juanjcardona13/graphene-cruddals)](https://app.codecov.io/gh/juanjcardona13/graphene-cruddals)
+  
 
 
 <sub>Built with ❤︎ by [Juan J Cardona](https://github.com/juanjcardona13)</sub>
