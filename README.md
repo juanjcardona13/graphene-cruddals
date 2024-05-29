@@ -6,6 +6,9 @@
 👩🏽‍💻 🚀 👨🏽‍💻  
 **Build your own library to streamline trivial code for CRUD operations.**  
 
+[![PyPI](https://img.shields.io/pypi/v/graphene-cruddals?style=flat-&color=00559c&label=pypi&logo=python&logoColor=white)](https://pypi.org/project/graphene-cruddals/)
+[![GitHub License](https://img.shields.io/github/license/juanjcardona13/graphene-cruddals?style=flat&color=4c1)](https://github.com/juanjcardona13/graphene-cruddals/blob/main/LICENSE)  
+
 
 <sub>Built with ❤︎ by [Juan J Cardona](https://github.com/juanjcardona13)</sub>
 
