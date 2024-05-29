@@ -4,8 +4,10 @@ import pytest
 
 import graphene
 from graphene import ObjectType
+from graphene_cruddals.registry.registry_global import get_global_registry
 from graphene_cruddals.types.utils import (
     convert_model_to_model_filter_input_object_type,
+    convert_model_to_model_mutate_input_object_type,
     convert_model_to_model_object_type,
     convert_model_to_model_order_by_input_object_type,
     convert_model_to_model_paginated_object_type,
@@ -38,6 +40,57 @@ def test_convert_model_to_model_object_type(setup_registry):
     assert issubclass(result, ObjectType)
 
 
+def test_convert_model_to_model_object_type_without_model(setup_registry):
+    with pytest.raises(ValueError) as exc_info:
+        convert_model_to_model_object_type(
+            None, "Test", setup_registry, get_fields, mock_field_converter_function
+        )
+    assert str(exc_info.value) == "Model is empty in convert_model_to_model_object_type"
+
+
+def test_convert_model_to_model_object_type_without_name(setup_registry):
+    with pytest.raises(ValueError) as exc_info:
+        convert_model_to_model_object_type(
+            model, None, setup_registry, get_fields, mock_field_converter_function
+        )
+    assert str(exc_info.value) == "Name is empty in convert_model_to_model_object_type"
+
+
+def test_convert_model_to_model_object_type_without_field_converter_function(
+    setup_registry
+):
+    with pytest.raises(ValueError) as exc_info:
+        convert_model_to_model_object_type(
+            model, "Test", setup_registry, get_fields, None
+        )
+    assert (
+        str(exc_info.value)
+        == "Field converter function is empty in convert_model_to_model_object_type"
+    )
+
+
+def test_convert_model_to_model_object_type_with_field_converter_function_not_callable(
+    setup_registry
+):
+    with pytest.raises(ValueError) as exc_info:
+        convert_model_to_model_object_type(
+            model, "Test", setup_registry, get_fields, "not_callable"
+        )
+    assert (
+        str(exc_info.value)
+        == "Field converter function is not callable in convert_model_to_model_object_type"
+    )
+
+
+def test_convert_model_to_model_object_type_without_registry(setup_registry):
+    result = convert_model_to_model_object_type(
+        model, "Test", None, get_fields, mock_field_converter_function
+    )
+    assert isinstance(result, type)
+    assert issubclass(result, ObjectType)
+    assert result._meta.registry == get_global_registry()
+
+
 def test_convert_model_to_model_paginated_object_type(setup_registry):
     model = {
         "field1": int,
@@ -60,6 +113,221 @@ def test_convert_model_to_model_paginated_object_type(setup_registry):
 
     assert issubclass(pagination_object_type, ObjectType)
     assert pagination_object_type._meta.name == "TestModelPaginatedType"
+
+
+def test_convert_model_to_model_paginated_object_type_without_model(setup_registry):
+    with pytest.raises(ValueError) as exc_info:
+        convert_model_to_model_paginated_object_type(
+            None, "TestModel", setup_registry, None, None
+        )
+    assert (
+        str(exc_info.value)
+        == "Model is empty in convert_model_to_model_paginated_object_type"
+    )
+
+
+def test_convert_model_to_model_paginated_object_type_without_registry(setup_registry):
+    model = {
+        "field1": int,
+        "field2": str,
+        "field3": bool,
+    }
+    pascal_case_name = "TestModel"
+    model_object_type = convert_model_to_model_object_type(
+        model, "TestModel", None, get_fields, mock_field_converter_function
+    )
+    extra_fields = {
+        "extra_field1": int,
+        "extra_field2": str,
+    }
+
+    pagination_object_type = convert_model_to_model_paginated_object_type(
+        model, pascal_case_name, None, model_object_type, extra_fields
+    )
+
+    assert issubclass(pagination_object_type, ObjectType)
+    assert pagination_object_type._meta.name == "TestModelPaginatedType"
+
+
+def test_convert_model_to_model_paginated_object_type_without_pascal_case_name(
+    setup_registry
+):
+    model = {
+        "field1": int,
+        "field2": str,
+        "field3": bool,
+    }
+    registry = mock_registry
+    model_object_type = convert_model_to_model_object_type(
+        model, "TestModel", registry, get_fields, mock_field_converter_function
+    )
+    extra_fields = {
+        "extra_field1": int,
+        "extra_field2": str,
+    }
+
+    with pytest.raises(ValueError) as exc_info:
+        convert_model_to_model_paginated_object_type(
+            model, None, registry, model_object_type, extra_fields
+        )
+    assert (
+        str(exc_info.value)
+        == "Pascal case name is empty in convert_model_to_model_paginated_object_type"
+    )
+
+
+def test_convert_model_to_model_paginated_object_type_without_model_object_type(
+    setup_registry
+):
+    model = {
+        "field1": int,
+        "field2": str,
+        "field3": bool,
+    }
+    pascal_case_name = "TestModel"
+    registry = mock_registry
+    extra_fields = {
+        "extra_field1": int,
+        "extra_field2": str,
+    }
+
+    with pytest.raises(ValueError) as exc_info:
+        convert_model_to_model_paginated_object_type(
+            model, pascal_case_name, registry, None, extra_fields
+        )
+    assert (
+        str(exc_info.value)
+        == "Model object type is empty in convert_model_to_model_paginated_object_type"
+    )
+
+
+def test_convert_model_to_model_mutate_input_object_type(setup_registry):
+    model = {
+        "id": int,
+        "name": str,
+        "age": int,
+    }
+
+    pascal_case_name = "Person"
+    registry = mock_registry
+
+    def field_converter_function(name, field_type, registry):
+        if field_type == str:
+            return graphene.String()
+        else:
+            return graphene.Int()
+
+    def get_fields(model):
+        return model
+
+    # Call the function to convert the model to InputObjectType
+    input_object_type = convert_model_to_model_mutate_input_object_type(
+        model=model,
+        pascal_case_name=pascal_case_name,
+        registry=registry,
+        get_fields_function=get_fields,
+        field_converter_function=field_converter_function,
+        type_mutation="create",
+        meta_attrs=None,
+        extra_fields=None,
+    )
+    # Assert that the InputObjectType is correctly constructed
+    assert issubclass(input_object_type, graphene.InputObjectType)
+    assert input_object_type._meta.name == "CreatePersonInput"
+
+
+def test_convert_model_to_model_mutate_input_object_type_without_model(setup_registry):
+    with pytest.raises(ValueError) as exc_info:
+        convert_model_to_model_mutate_input_object_type(
+            model=None,
+            pascal_case_name="Person",
+            registry=mock_registry,
+            get_fields_function=get_fields,
+            field_converter_function=mock_field_converter_function,
+            type_mutation="create",
+            meta_attrs=None,
+            extra_fields=None,
+        )
+    assert (
+        str(exc_info.value)
+        == "Model is empty in convert_model_to_model_mutate_input_object_type"
+    )
+
+
+def test_convert_model_to_model_mutate_input_object_type_without_pascal_case_name(
+    setup_registry
+):
+    with pytest.raises(ValueError) as exc_info:
+        convert_model_to_model_mutate_input_object_type(
+            model=model,
+            pascal_case_name=None,
+            registry=mock_registry,
+            get_fields_function=get_fields,
+            field_converter_function=mock_field_converter_function,
+            type_mutation="create",
+            meta_attrs=None,
+            extra_fields=None,
+        )
+    assert (
+        str(exc_info.value)
+        == "Pascal case name is empty in convert_model_to_model_mutate_input_object_type"
+    )
+
+
+def test_convert_model_to_model_mutate_input_object_type_without_registry(
+    setup_registry
+):
+    input_object_type = convert_model_to_model_mutate_input_object_type(
+        model=model,
+        pascal_case_name="Person",
+        registry=None,
+        get_fields_function=get_fields,
+        field_converter_function=mock_field_converter_function,
+        type_mutation="create",
+        meta_attrs=None,
+        extra_fields=None,
+    )
+    assert issubclass(input_object_type, graphene.InputObjectType)
+
+
+def test_convert_model_to_model_mutate_input_object_type_without_field_converter_function(
+    setup_registry
+):
+    with pytest.raises(ValueError) as exc_info:
+        convert_model_to_model_mutate_input_object_type(
+            model=model,
+            pascal_case_name="Person",
+            registry=mock_registry,
+            get_fields_function=get_fields,
+            field_converter_function=None,
+            type_mutation="create",
+            meta_attrs=None,
+            extra_fields=None,
+        )
+    assert (
+        str(exc_info.value)
+        == "Field converter function is empty in convert_model_to_model_mutate_input_object_type"
+    )
+
+
+def test_convert_model_to_model_mutate_input_object_type_with_field_converter_function_not_callable(
+    setup_registry
+):
+    with pytest.raises(ValueError) as exc_info:
+        convert_model_to_model_mutate_input_object_type(
+            model=model,
+            pascal_case_name="Person",
+            registry=mock_registry,
+            get_fields_function=get_fields,
+            field_converter_function="not_callable",
+            type_mutation="create",
+            meta_attrs=None,
+            extra_fields=None,
+        )
+    assert (
+        str(exc_info.value)
+        == "Field converter function is not callable in convert_model_to_model_mutate_input_object_type"
+    )
 
 
 def test_convert_model_to_model_filter_input_object_type(setup_registry):

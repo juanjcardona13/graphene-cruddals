@@ -385,9 +385,6 @@ class BuilderCruddalsModel(BaseCruddals):
         if not config.registry:
             config.registry = get_global_registry()
 
-        if not config.plural_pascal_case_name:
-            config.plural_pascal_case_name = f"{config.pascal_case_name}s"
-
         self.model = config.model
         self.registry = config.registry
         self.prefix = config.prefix
@@ -395,7 +392,7 @@ class BuilderCruddalsModel(BaseCruddals):
         self.cruddals_config = config
         self.model_name_in_different_case = get_name_of_model_in_different_case(
             name_model=config.pascal_case_name,
-            name_model_plural=config.plural_pascal_case_name,
+            name_model_plural=config.plural_pascal_case_name,  # type: ignore
             prefix=config.prefix,
             suffix=config.suffix,
         )
@@ -464,10 +461,8 @@ class BuilderCruddalsModel(BaseCruddals):
         """
         if internal_interface is not None:
             attrs_internal_cls_meta = {}
-            if (
-                getattr(internal_interface, "Meta", None) is not None
-                and include_meta_attrs
-            ):
+            meta = getattr(internal_interface, "Meta", None)
+            if meta is not None and include_meta_attrs:
                 attrs_internal_cls_meta = graphene_get_props(internal_interface.Meta)
             props_function = delete_keys(
                 graphene_get_props(internal_interface), ["Meta"]

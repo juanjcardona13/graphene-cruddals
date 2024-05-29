@@ -4,7 +4,7 @@ from typing import Any, Callable, Dict, Literal, Union
 import graphene
 from graphene.types.generic import GenericScalar
 from graphene_cruddals.registry.registry_global import RegistryGlobal
-from graphene_cruddals.utils.error_handling.error_types import ErrorCollectionType
+from graphene_cruddals.types.error_types import ErrorCollectionType
 from graphene_cruddals.utils.main import (
     build_class,
     exists_conversion_for_model,

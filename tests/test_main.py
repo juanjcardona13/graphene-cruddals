@@ -862,6 +862,13 @@ class TestBaseCruddals:
         last_element = base_cruddals.get_last_element(key, obj, default="default")
         assert last_element == "default"
 
+    def test_get_last_element_with_non_list_value(self):
+        base_cruddals = BaseCruddals()
+        key = "key"
+        obj = {key: "single value"}
+        last_element = base_cruddals.get_last_element(key, obj)
+        assert last_element == "single value"
+
     def test_wrap_resolver_with_pre_post_resolvers(self):
         base_cruddals = BaseCruddals()
 
@@ -878,6 +885,34 @@ class TestBaseCruddals:
         )
         assert callable(wrapped_resolver)
 
+    def test_wrap_resolver_with_pre_post_resolvers_execution(self):
+        base_cruddals = BaseCruddals()
+
+        def default_resolver(root, info, **kw):
+            return "default response"
+
+        def pre_resolver(root, info, **kw):
+            return (root, info, {**kw, "pre_modified": True})
+
+        def post_resolver(root, info, **kw):
+            return "post modified " + kw["CRUDDALS_RESPONSE"]
+
+        extra_pre_post_resolvers = {
+            "pre_resolver": [pre_resolver],
+            "post_resolver": [post_resolver],
+        }
+        name_function = "resolver"
+        wrapped_resolver = base_cruddals.wrap_resolver_with_pre_post_resolvers(
+            default_resolver, extra_pre_post_resolvers, name_function
+        )
+
+        # Simulate calling the wrapped resolver with GraphQL's root and info objects
+        root = {}
+        # info should object, not dict
+        info = build_class(name="Info", bases=(object,), attrs={})
+        response = wrapped_resolver(root, info)
+        assert response == "post modified default response"
+
 
 class TestBuilderCruddalsModel:
     def test_init(self):
@@ -886,6 +921,12 @@ class TestBuilderCruddalsModel:
         assert builder.model == mock_model
         assert builder.prefix == ""
         assert builder.suffix == ""
+        expected_plural_name = "TestModels"
+        assert builder.cruddals_config.plural_pascal_case_name == expected_plural_name
+        assert (
+            builder.model_name_in_different_case["plural_pascal_case"]
+            == expected_plural_name
+        )
         assert builder.cruddals_config == mock_model_config_without_interfaces
         assert builder.model_name_in_different_case == {
             "snake_case": "test_model",
@@ -927,3 +968,28 @@ class TestBuilderCruddalsModel:
         dict_of_internal_interface_attr = {}
         result = builder._get_model_object_type(dict_of_internal_interface_attr)
         assert issubclass(result, graphene.ObjectType)
+
+    def test_get_internal_interface_attrs_empty(self):
+        builder = BuilderCruddalsModel(mock_model_config_with_interfaceO11)
+        result = builder.get_internal_interface_attrs()
+        assert result == {}
+
+    def test_get_internal_interface_attrs_include_meta(self):
+        builder = BuilderCruddalsModel(mock_model_config_with_interfaceO11)
+        result = builder.get_internal_interface_attrs(InterfaceO11.ObjectType, True)
+        assert result == {"only_fields": ("id",)}
+
+    def test_get_internal_interface_attrs_not_include_meta(self):
+        builder = BuilderCruddalsModel(mock_model_config_with_interfaceO11)
+        result = builder.get_internal_interface_attrs(InterfaceO11.ObjectType, False)
+        assert result == {}
+
+    def test_get_internal_interface_meta_attrs_empty(self):
+        builder = BuilderCruddalsModel(mock_model_config_with_interfaceO11)
+        result = builder.get_internal_interface_meta_attrs()
+        assert result == {}
+
+    def test_get_internal_interface_meta_attrs(self):
+        builder = BuilderCruddalsModel(mock_model_config_with_interfaceO11)
+        result = builder.get_internal_interface_meta_attrs(InterfaceO11.ObjectType)
+        assert result == {"only_fields": ("id",)}

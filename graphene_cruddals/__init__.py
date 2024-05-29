@@ -21,6 +21,10 @@ from .registry.registry_global import (
     get_global_registry,
     reset_global_registry,
 )
+from .types.error_types import (
+    ErrorCollectionType,
+    ErrorType,
+)
 from .types.main import (
     ModelInputObjectType,
     ModelObjectType,
@@ -37,10 +41,6 @@ from .types.utils import (
     convert_model_to_model_object_type,
     convert_model_to_model_order_by_input_object_type,
     convert_model_to_model_paginated_object_type,
-)
-from .utils.error_handling.error_types import (
-    ErrorCollectionType,
-    ErrorType,
 )
 from .utils.main import (
     _camelize_django_str,

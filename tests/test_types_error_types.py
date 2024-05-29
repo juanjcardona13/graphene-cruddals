@@ -1,7 +1,7 @@
 import pytest
 
 from graphene import ObjectType
-from graphene_cruddals.utils.error_handling.error_types import (
+from graphene_cruddals.types.error_types import (
     ErrorCollectionType,
     ErrorType,
 )

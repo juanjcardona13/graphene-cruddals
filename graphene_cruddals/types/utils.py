@@ -55,6 +55,8 @@ def convert_model_to_model_object_type(
     """
     if not model:
         raise ValueError("Model is empty in convert_model_to_model_object_type")
+    if not registry:
+        registry = get_global_registry()
     if exists_conversion_for_model(
         model, registry, TypeRegistryForModelEnum.OBJECT_TYPE.value
     ):
@@ -71,8 +73,7 @@ def convert_model_to_model_object_type(
         raise ValueError(
             "Field converter function is not callable in convert_model_to_model_object_type"
         )
-    if not registry:
-        registry = get_global_registry()
+
     if not extra_fields:
         extra_fields = {}
     if not meta_attrs:
@@ -120,6 +121,8 @@ def convert_model_to_model_paginated_object_type(
         raise ValueError(
             "Model is empty in convert_model_to_model_paginated_object_type"
         )
+    if not registry:
+        registry = get_global_registry()
     if exists_conversion_for_model(
         model, registry, TypeRegistryForModelEnum.PAGINATED_OBJECT_TYPE.value
     ):
@@ -128,14 +131,13 @@ def convert_model_to_model_paginated_object_type(
         )
     if not pascal_case_name:
         raise ValueError(
-            "Name is empty in convert_model_to_model_paginated_object_type"
+            "Pascal case name is empty in convert_model_to_model_paginated_object_type"
         )
     if not model_object_type:
         raise ValueError(
             "Model object type is empty in convert_model_to_model_paginated_object_type"
         )
-    if not registry:
-        registry = get_global_registry()
+
     if extra_fields is None:
         extra_fields = {}
 
@@ -180,9 +182,11 @@ def convert_model_to_model_mutate_input_object_type(
     :param extra_fields: Additional fields to include in the InputObjectType.
     :return: The constructed InputObjectType.
     """
+    if not registry:
+        registry = get_global_registry()
     if not pascal_case_name:
         raise ValueError(
-            "Name is empty in convert_model_to_model_mutate_input_object_type"
+            "Pascal case name is empty in convert_model_to_model_mutate_input_object_type"
         )
     if type_mutation == "create_update":
         type_of_registry = (
@@ -213,8 +217,7 @@ def convert_model_to_model_mutate_input_object_type(
         raise ValueError(
             "Field converter function is not callable in convert_model_to_model_mutate_input_object_type"
         )
-    if not registry:
-        registry = get_global_registry()
+
     if not extra_fields:
         extra_fields = {}
     if not meta_attrs:
@@ -262,6 +265,8 @@ def convert_model_to_model_filter_input_object_type(
     :param extra_fields: Additional fields to include in the InputObjectType.
     :return: The constructed filter InputObjectType.
     """
+    if not registry:
+        registry = get_global_registry()
     if not model:
         raise ValueError(
             "Model is empty in convert_model_to_model_filter_input_object_type"
@@ -284,8 +289,7 @@ def convert_model_to_model_filter_input_object_type(
         raise ValueError(
             "Field converter function is not callable in convert_model_to_model_filter_input_object_type"
         )
-    if not registry:
-        registry = get_global_registry()
+
     if not extra_fields:
         extra_fields = {}
     if not meta_attrs:
@@ -332,6 +336,8 @@ def convert_model_to_model_order_by_input_object_type(
     :param extra_fields: Additional fields to include in the InputObjectType.
     :return: The constructed order by InputObjectType.
     """
+    if not registry:
+        registry = get_global_registry()
     if not model:
         raise ValueError(
             "Model is empty in convert_model_to_model_order_by_input_object_type"
@@ -356,8 +362,7 @@ def convert_model_to_model_order_by_input_object_type(
         raise ValueError(
             "Field converter function is not callable in convert_model_to_model_order_by_input_object_type"
         )
-    if not registry:
-        registry = get_global_registry()
+
     if not extra_fields:
         extra_fields = {}
     if not meta_attrs:

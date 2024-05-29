@@ -6,9 +6,11 @@ from graphene_cruddals.utils.main import (
     camelize,
     delete_keys,
     get_name_of_model_in_different_case,
+    get_separator,
     is_iterable,
     merge_dict,
     transform_string,
+    transform_string_with_separator,
 )
 
 
@@ -20,12 +22,63 @@ def test_build_class():
     assert instance.method1(1) == 2
 
 
+def test_build_class_without_attrs():
+    CustomClass = build_class("CustomClass", (object,))
+    instance = CustomClass()
+    assert instance is not None
+
+
 def test_delete_keys():
     original_dict = {"key1": "value1", "key2": "value2", "key3": "value3"}
     modified_dict = delete_keys(original_dict, ["key2", "key3"])
     assert "key2" not in modified_dict
     assert "key3" not in modified_dict
     assert modified_dict == {"key1": "value1"}
+
+
+def test_get_separator():
+    # Test case 1: String contains a space
+    s1 = "Hello World"
+    assert get_separator(s1) == " "
+
+    # Test case 2: String contains an underscore
+    s2 = "hello_world"
+    assert get_separator(s2) == "_"
+
+    # Test case 3: String contains a hyphen
+    s3 = "hello-world"
+    assert get_separator(s3) == "-"
+
+    # Test case 4: String contains no separator
+    s4 = "helloworld"
+    assert get_separator(s4) == ""
+
+    # Test case 5: Empty string
+    s5 = ""
+    assert get_separator(s5) == ""
+
+    # Test case 6: String contains a space and underscore
+    s6 = "hello_world hello world"
+    assert get_separator(s6) == " "
+
+
+def test_transform_string_with_separator():
+    # Test case 1: Convert string to PascalCase with underscore separator
+    result = transform_string_with_separator("hello_world", "PascalCase", "_")
+    assert result == "HelloWorld"
+
+    # Test case 2: Convert string to snake_case with hyphen separator
+    result = transform_string_with_separator("hello-world", "snake_case", "-")
+    assert result == "hello_world"
+
+    # Test case 3: Convert string to kebab-case with space separator
+    result = transform_string_with_separator("hello world", "kebab-case", " ")
+    assert result == "hello-world"
+
+    # Test case 4: Convert string to lowercase with no separator
+    with pytest.raises(ValueError) as exc_info:
+        transform_string_with_separator("hello_world", "lowercase", "")
+    assert str(exc_info.value) == "actual_separator cannot be empty."
 
 
 def test_is_iterable():

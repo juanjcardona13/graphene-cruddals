@@ -169,7 +169,7 @@ class ModelInputObjectType(graphene.InputObjectType):
         get_fields_function: Callable[[Dict[str, Any]], Dict[str, Any]] = lambda x: x,
         field_converter_function: Callable[
             [str, Any, RegistryGlobal], GRAPHENE_TYPE
-        ] = lambda x, y: graphene.String(),
+        ] = lambda x, y, z: graphene.String(),
         registry: Union[RegistryGlobal, None] = None,
         only_fields: Union[List[str], Literal["__all__"], None] = None,
         exclude_fields: Union[List[str], None] = None,
@@ -228,7 +228,7 @@ class ModelSearchInputObjectType(graphene.InputObjectType):
         get_fields_function: Callable[[Dict[str, Any]], Dict[str, Any]] = lambda x: x,
         field_converter_function: Callable[
             [str, Any, RegistryGlobal], GRAPHENE_TYPE
-        ] = lambda x, y: graphene.String(),
+        ] = lambda x, y, z: graphene.String(),
         registry: Union[RegistryGlobal, None] = None,
         only_fields: Union[List[str], Literal["__all__"], None] = None,
         exclude_fields: Union[List[str], None] = None,
@@ -270,7 +270,7 @@ class ModelOrderByInputObjectType(graphene.InputObjectType):
         get_fields_function: Callable[[Dict[str, Any]], Dict[str, Any]] = lambda x: x,
         field_converter_function: Callable[
             [str, Any, RegistryGlobal], GRAPHENE_TYPE
-        ] = lambda x, y: graphene.String(),
+        ] = lambda x, y, z: graphene.String(),
         registry: Union[RegistryGlobal, None] = None,
         only_fields: Union[List[str], Literal["__all__"], None] = None,
         exclude_fields: Union[List[str], None] = None,

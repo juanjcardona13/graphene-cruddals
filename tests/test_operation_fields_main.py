@@ -4,34 +4,110 @@ import graphene
 from graphene.test import Client
 from graphene_cruddals.operation_fields.main import (
     IntOrAll,
+    ModelActivateField,
+    ModelCreateUpdateField,
+    ModelDeactivateField,
+    ModelDeleteField,
+    ModelListField,
+    ModelReadField,
+    ModelSearchField,
     PaginationConfigInput,
+    get_object_type_payload,
 )
 from graphene_cruddals.registry.registry_global import (
     get_global_registry,
 )
+from graphene_cruddals.types.error_types import ErrorCollectionType
 from graphene_cruddals.types.main import (
+    ModelInputObjectType,
     ModelObjectType,
+    ModelOrderByInputObjectType,
     ModelPaginatedObjectType,
+    ModelSearchInputObjectType,
 )
 from graphene_cruddals.utils.main import build_class
+from graphene_cruddals.utils.typing.custom_typing import (
+    TypeRegistryForModelEnum,
+)
+
+mock_database = [
+    {"id": 1, "name": "test1", "active": True},
+    {"id": 2, "name": "test2", "active": False},
+    {"id": 3, "name": "test3", "active": True},
+]
+
+mock_model_operation_fields = {
+    "id": int,
+    "name": str,
+    "active": bool,
+    "mock_field": str,
+}
+
+
+class MockModelOperationFieldsObjectType(ModelObjectType):
+    class Meta:
+        model = mock_model_operation_fields
+
+
+class MockModelOperationFieldsPaginatedObjectType(ModelPaginatedObjectType):
+    class Meta:
+        model_object_type = MockModelOperationFieldsObjectType
+
+
+class MockModelOperationFieldsInputObjectType(ModelInputObjectType):
+    class Meta:
+        model = mock_model_operation_fields
+
+
+class MockModelOperationFieldsSearchInputObjectType(ModelSearchInputObjectType):
+    class Meta:
+        model = mock_model_operation_fields
+
+
+class MockModelOperationFieldsOrderByInputObjectType(ModelOrderByInputObjectType):
+    class Meta:
+        model = mock_model_operation_fields
 
 
 @pytest.fixture
 def registry():
-    return get_global_registry()
-
-
-sample_model = {"id": int, "name": str, "active": bool}
-
-
-class MockModelObjectType(ModelObjectType):
-    class Meta:
-        model = sample_model
-
-
-class MockModelPaginatedObjectType(ModelPaginatedObjectType):
-    class Meta:
-        model_object_type = MockModelObjectType
+    registry = get_global_registry()
+    registry.register_model(
+        mock_model_operation_fields,
+        TypeRegistryForModelEnum.OBJECT_TYPE.value,
+        MockModelOperationFieldsObjectType,
+    )
+    registry.register_model(
+        mock_model_operation_fields,
+        TypeRegistryForModelEnum.PAGINATED_OBJECT_TYPE.value,
+        MockModelOperationFieldsPaginatedObjectType,
+    )
+    registry.register_model(
+        mock_model_operation_fields,
+        TypeRegistryForModelEnum.INPUT_OBJECT_TYPE.value,
+        MockModelOperationFieldsInputObjectType,
+    )
+    registry.register_model(
+        mock_model_operation_fields,
+        TypeRegistryForModelEnum.INPUT_OBJECT_TYPE_FOR_CREATE.value,
+        MockModelOperationFieldsInputObjectType,
+    )
+    registry.register_model(
+        mock_model_operation_fields,
+        TypeRegistryForModelEnum.INPUT_OBJECT_TYPE_FOR_UPDATE.value,
+        MockModelOperationFieldsInputObjectType,
+    )
+    registry.register_model(
+        mock_model_operation_fields,
+        TypeRegistryForModelEnum.INPUT_OBJECT_TYPE_FOR_SEARCH.value,
+        MockModelOperationFieldsSearchInputObjectType,
+    )
+    registry.register_model(
+        mock_model_operation_fields,
+        TypeRegistryForModelEnum.INPUT_OBJECT_TYPE_FOR_ORDER_BY.value,
+        MockModelOperationFieldsOrderByInputObjectType,
+    )
+    return registry
 
 
 @pytest.fixture
@@ -40,48 +116,52 @@ def client():
         "Query", bases=(graphene.ObjectType,), attrs={"sample": graphene.String()}
     )
     schema = graphene.Schema(
-        query=query, types=[MockModelObjectType, MockModelPaginatedObjectType]
+        query=query,
+        types=[
+            MockModelOperationFieldsObjectType,
+            MockModelOperationFieldsPaginatedObjectType,
+        ],
     )
     return Client(schema)
 
 
-# def test_get_object_type_payload_basic(registry):
-#     payload_type = get_object_type_payload(
-#         model=sample_model,
-#         registry=registry,
-#         name_for_output_type="MockModelObjectType",
-#         plural_model_name="Tests",
-#         include_success=False,
-#     )
-#     assert issubclass(payload_type, graphene.ObjectType)
-#     assert "objects" in payload_type._meta.fields
-#     assert "errors_report" in payload_type._meta.fields
-#     assert isinstance(payload_type._meta.fields["objects"], ModelListField)
-#     assert isinstance(payload_type._meta.fields["objects"].type, graphene.List)
-#     assert isinstance(
-#         payload_type._meta.fields["objects"].type.of_type, graphene.NonNull
-#     )
-#     # assert payload_type._meta.fields["objects"].type.of_type.of_type == MockModelObjectType
+def test_get_object_type_payload_basic(registry):
+    payload_type = get_object_type_payload(
+        model=mock_model_operation_fields,
+        registry=registry,
+        name_for_output_type="MockModelOperationFieldsObjectType",
+        plural_model_name="Tests",
+        include_success=False,
+    )
+    assert issubclass(payload_type, graphene.ObjectType)
+    assert "objects" in payload_type._meta.fields
+    assert "errors_report" in payload_type._meta.fields
+    assert isinstance(payload_type._meta.fields["objects"], graphene.Field)
+    assert isinstance(payload_type._meta.fields["objects"].type, graphene.List)
+    assert (
+        payload_type._meta.fields["objects"].type.of_type
+        == MockModelOperationFieldsObjectType
+    )
 
-#     assert isinstance(payload_type._meta.fields["errors_report"], graphene.Field)
-#     assert isinstance(payload_type._meta.fields["errors_report"].type, graphene.List)
-#     assert (
-#         payload_type._meta.fields["errors_report"].type.of_type == ErrorCollectionType
-#     )
-#     assert "success" not in payload_type._meta.fields
+    assert isinstance(payload_type._meta.fields["errors_report"], graphene.Field)
+    assert isinstance(payload_type._meta.fields["errors_report"].type, graphene.List)
+    assert (
+        payload_type._meta.fields["errors_report"].type.of_type == ErrorCollectionType
+    )
+    assert "success" not in payload_type._meta.fields
 
 
-# def test_get_object_type_payload_include_success(registry):
-#     payload_type = get_object_type_payload(
-#         model=sample_model,
-#         registry=registry,
-#         name_for_output_type="MockModelObjectType",
-#         plural_model_name="Tests",
-#         include_success=True,
-#     )
-#     assert "success" in payload_type._meta.fields
-#     assert isinstance(payload_type._meta.fields["success"], graphene.Field)
-#     assert payload_type._meta.fields["success"].type == graphene.Boolean
+def test_get_object_type_payload_include_success(registry):
+    payload_type = get_object_type_payload(
+        model=mock_model_operation_fields,
+        registry=registry,
+        name_for_output_type="MockModelOperationFieldsObjectType",
+        plural_model_name="Tests",
+        include_success=True,
+    )
+    assert "success" in payload_type._meta.fields
+    assert isinstance(payload_type._meta.fields["success"], graphene.Field)
+    assert payload_type._meta.fields["success"].type == graphene.Boolean
 
 
 def test_pagination_config_input():
@@ -128,243 +208,747 @@ def test_pagination_interface_fields(client):
     assert result["data"]["__type"]["fields"] == expected_fields
 
 
-# class TestModelCreateUpdateField:
+class TestModelCreateUpdateField:
+    def test_create_update_field_initialization_create(self, registry):
+        field = ModelCreateUpdateField(
+            plural_model_name="Tests",
+            type_operation="Create",
+            model=mock_model_operation_fields,
+            registry=registry,
+        )
+        payload_type = field.type
 
-#     def test_create_update_field_initialization_create(self, registry):
-#         field = ModelCreateUpdateField(
-#             plural_model_name="Tests",
-#             type_operation="Create",
-#             model=sample_model,
-#             registry=registry,
-#         )
-#         payload_type = field.type
+        assert isinstance(field, graphene.Field)
+        assert "input" in field.args
+        assert field.resolver is None
+        assert field.name == "createTests"
 
-#         assert isinstance(field, graphene.Field)
-#         assert field.args == {}
-#         assert field.resolver == None
-#         assert field.name == "createTests"
+        assert issubclass(payload_type, graphene.ObjectType)  # type: ignore
+        assert "objects" in payload_type._meta.fields
+        assert "errors_report" in payload_type._meta.fields
+        assert isinstance(payload_type._meta.fields["objects"], graphene.Field)
+        assert isinstance(payload_type._meta.fields["objects"].type, graphene.List)
+        assert (
+            payload_type._meta.fields["objects"].type.of_type
+            == MockModelOperationFieldsObjectType
+        )
 
-#         assert issubclass(payload_type, graphene.ObjectType) # type: ignore
-#         assert "objects" in payload_type._meta.fields
-#         assert "errors_report" in payload_type._meta.fields
-#         assert isinstance(payload_type._meta.fields["objects"], ModelListField)
-#         assert isinstance(payload_type._meta.fields["objects"].type, graphene.List)
-#         assert isinstance(payload_type._meta.fields["objects"].type.of_type, graphene.NonNull)
-#         assert payload_type._meta.fields["objects"].type.of_type.of_type == MockModelObjectType
+        assert isinstance(payload_type._meta.fields["errors_report"], graphene.Field)
+        assert isinstance(
+            payload_type._meta.fields["errors_report"].type, graphene.List
+        )
+        assert (
+            payload_type._meta.fields["errors_report"].type.of_type
+            == ErrorCollectionType
+        )
+        assert "success" not in payload_type._meta.fields
 
-#         assert isinstance(payload_type._meta.fields["errors_report"], graphene.Field)
-#         assert isinstance(payload_type._meta.fields["errors_report"].type, graphene.List)
-#         assert payload_type._meta.fields["errors_report"].type.of_type == ErrorCollectionType
-#         assert "success" not in payload_type._meta.fields
+    def test_create_update_field_initialization_update(self, registry):
+        field = ModelCreateUpdateField(
+            plural_model_name="Tests",
+            type_operation="Update",
+            model=mock_model_operation_fields,
+            registry=registry,
+        )
+        payload_type = field.type
 
-#     def test_create_update_field_initialization_update(self, registry):
-#         field = ModelCreateUpdateField(
-#             plural_model_name="Tests",
-#             type_operation="Update",
-#             model=sample_model,
-#             registry=registry,
-#         )
-#         payload_type = field.type
+        assert isinstance(field, graphene.Field)
+        assert "input" in field.args
+        assert field.resolver is None
+        assert field.name == "updateTests"
 
-#         assert isinstance(field, graphene.Field)
-#         assert field.args == {}
-#         assert field.resolver == None
-#         assert field.name == "updateTests"
+        assert issubclass(payload_type, graphene.ObjectType)  # type: ignore
+        assert "objects" in payload_type._meta.fields
+        assert "errors_report" in payload_type._meta.fields
+        assert isinstance(payload_type._meta.fields["objects"], graphene.Field)
+        assert isinstance(payload_type._meta.fields["objects"].type, graphene.List)
+        assert (
+            payload_type._meta.fields["objects"].type.of_type
+            == MockModelOperationFieldsObjectType
+        )
 
-#         assert issubclass(payload_type, graphene.ObjectType) # type: ignore
-#         assert "objects" in payload_type._meta.fields
-#         assert "errors_report" in payload_type._meta.fields
-#         assert isinstance(payload_type._meta.fields["objects"], ModelListField)
-#         assert isinstance(payload_type._meta.fields["objects"].type, graphene.List)
-#         assert isinstance(payload_type._meta.fields["objects"].type.of_type, graphene.NonNull)
-#         assert payload_type._meta.fields["objects"].type.of_type.of_type == MockModelObjectType
+        assert isinstance(payload_type._meta.fields["errors_report"], graphene.Field)
+        assert isinstance(
+            payload_type._meta.fields["errors_report"].type, graphene.List
+        )
+        assert (
+            payload_type._meta.fields["errors_report"].type.of_type
+            == ErrorCollectionType
+        )
+        assert "success" not in payload_type._meta.fields
 
-#         assert isinstance(payload_type._meta.fields["errors_report"], graphene.Field)
-#         assert isinstance(payload_type._meta.fields["errors_report"].type, graphene.List)
-#         assert payload_type._meta.fields["errors_report"].type.of_type == ErrorCollectionType
-#         assert "success" not in payload_type._meta.fields
+    def test_create_update_field_without_input_object_type(self, registry):
+        with pytest.raises(ValueError) as exc_info:
+            ModelCreateUpdateField(
+                plural_model_name="Tests",
+                type_operation="Create",
+                model={"new_model": str},
+                registry=registry,
+            )
+        assert "The model does not have a ModelInputObjectType registered" in str(
+            exc_info.value
+        )
 
-#     def test_create_update_field_with_args(self, registry):
-#         field = ModelCreateUpdateField(
-#             plural_model_name="Tests",
-#             type_operation="Create",
-#             model=sample_model,
-#             registry=registry,
-#             resolver=lambda root, info, **kwargs: None,
-#             **{"test": graphene.String()}
-#         )
-#         assert field.args == {"test": graphene.Argument(graphene.String)}
+    def test_wrap_resolve_with_resolver(self, registry):
+        # Setup: Create an instance of ModelCreateUpdateField with a mock resolver
+        def mock_resolver(*args, **kwargs):
+            return "mock result"
 
+        field = ModelCreateUpdateField(
+            plural_model_name="Tests",
+            type_operation="Create",
+            model=mock_model_operation_fields,
+            registry=registry,
+            resolver=mock_resolver,
+        )
 
-# class TestModelReadField:
-#     def test_read_field_initialization(self, registry):
-#         singular_model_name = "TestModel"
-#         resolver = lambda root, info, **kwargs: None
-#         extra_args = {"extra_arg": graphene.String()}
+        # Action: Wrap the resolver using wrap_resolve method
+        wrapped_resolver = field.wrap_resolve(field.resolver)
 
-#         read_field = ModelReadField(
-#             singular_model_name=singular_model_name,
-#             model=sample_model,
-#             registry=registry,
-#             resolver=resolver,
-#             **extra_args
-#         )
+        # Assert: Check if the returned resolver is not None and callable
+        assert wrapped_resolver is not None
+        assert callable(wrapped_resolver)
 
-#         assert isinstance(read_field, graphene.Field)
-#         assert read_field.type == MockModelObjectType
-#         assert read_field.name == f"read{singular_model_name}"
-#         assert read_field.args == {"where": graphene.Argument(graphene.ID, required=True), "extra_arg": graphene.Argument(graphene.String)}
-#         assert read_field.resolver == resolver
+    def test_wrap_resolve_without_resolver(self, registry):
+        # Setup: Create an instance of ModelCreateUpdateField without providing a resolver
+        field = ModelCreateUpdateField(
+            plural_model_name="Tests",
+            type_operation="Create",
+            model=mock_model_operation_fields,
+            registry=registry,
+            resolver=None,  # Explicitly set resolver to None
+        )
 
+        # Action & Assert: Assert that calling wrap_resolve raises a ValueError
+        with pytest.raises(ValueError) as exc_info:
+            field.wrap_resolve(field.resolver)
 
-# class TestModelDeleteField:
-#     def test_delete_field_initialization(self, registry):
-#         plural_model_name = "Tests"
-#         resolver = lambda root, info, **kwargs: None
-#         extra_args = {"extra_arg": graphene.String()}
-
-#         delete_field = ModelDeleteField(
-#             plural_model_name=plural_model_name,
-#             model=sample_model,
-#             registry=registry,
-#             resolver=resolver,
-#             **extra_args
-#         )
-#         payload_type = delete_field.type
-
-#         assert isinstance(delete_field, graphene.Field)
-#         assert delete_field.name == f"delete{plural_model_name}"
-#         assert delete_field.args == {"where": graphene.Argument(graphene.ID, required=True), "extra_arg": graphene.Argument(graphene.String)}
-#         assert delete_field.resolver == resolver
-
-#         assert issubclass(payload_type, graphene.ObjectType) # type: ignore
-#         assert "objects" in payload_type._meta.fields
-#         assert "errors_report" in payload_type._meta.fields
-#         assert isinstance(payload_type._meta.fields["objects"], ModelListField)
-#         assert isinstance(payload_type._meta.fields["objects"].type, graphene.List)
-#         assert isinstance(payload_type._meta.fields["objects"].type.of_type, graphene.NonNull)
-#         assert payload_type._meta.fields["objects"].type.of_type.of_type == MockModelObjectType
-
-#         assert isinstance(payload_type._meta.fields["errors_report"], graphene.Field)
-#         assert isinstance(payload_type._meta.fields["errors_report"].type, graphene.List)
-#         assert payload_type._meta.fields["errors_report"].type.of_type == ErrorCollectionType
-#         assert "success" in payload_type._meta.fields
-#         assert payload_type._meta.fields["success"].type == graphene.Boolean
+        assert "resolver is None for ModelCreateUpdateField" in str(exc_info.value)
 
 
-# class TestModelDeactivateField:
-#     def test_deactivate_field_initialization(self, registry):
-#         plural_model_name = "Tests"
-#         resolver = lambda root, info, **kwargs: None
-#         extra_args = {"extra_arg": graphene.String()}
+class TestModelReadField:
+    def test_read_field_initialization(self, registry):
+        singular_model_name = "TestModel"
 
-#         deactivate_field = ModelDeactivateField(
-#             plural_model_name=plural_model_name,
-#             model=sample_model,
-#             registry=registry,
-#             state_controller_field="is_active",
-#             resolver=resolver,
-#             **extra_args
-#         )
-#         payload_type = deactivate_field.type
+        def resolver(root, info, **kwargs):
+            return None
 
-#         assert isinstance(deactivate_field, graphene.Field)
-#         assert deactivate_field.name == f"deactivate{plural_model_name}"
-#         assert deactivate_field.args == {"where": graphene.Argument(graphene.ID, required=True), "extra_arg": graphene.Argument(graphene.String)}
-#         assert deactivate_field.resolver == resolver
+        extra_args = {"extra_arg": graphene.String()}
 
-#         assert issubclass(payload_type, graphene.ObjectType) # type: ignore
-#         assert "objects" in payload_type._meta.fields
-#         assert "errors_report" in payload_type._meta.fields
-#         assert isinstance(payload_type._meta.fields["objects"], ModelListField)
-#         assert isinstance(payload_type._meta.fields["objects"].type, graphene.List)
-#         assert isinstance(payload_type._meta.fields["objects"].type.of_type, graphene.NonNull)
-#         assert payload_type._meta.fields["objects"].type.of_type.of_type == MockModelObjectType
+        read_field = ModelReadField(
+            singular_model_name=singular_model_name,
+            model=mock_model_operation_fields,
+            registry=registry,
+            resolver=resolver,
+            **extra_args,
+        )
 
-#         assert isinstance(payload_type._meta.fields["errors_report"], graphene.Field)
-#         assert isinstance(payload_type._meta.fields["errors_report"].type, graphene.List)
-#         assert payload_type._meta.fields["errors_report"].type.of_type == ErrorCollectionType
-#         assert "success" not in payload_type._meta.fields
+        assert isinstance(read_field, ModelReadField)
+        assert read_field.type == MockModelOperationFieldsObjectType
+        assert read_field.name == f"read{singular_model_name}"
+        assert "where" in read_field.args
+        assert "extra_arg" in read_field.args
+        assert read_field.resolver == resolver
 
+    def test_read_field_without_model_search_input_object_type(self, registry):
+        singular_model_name = "TestModel"
 
-# class TestModelActivateField:
-#     def test_activate_field_initialization(self, registry):
-#         plural_model_name = "Tests"
-#         resolver = lambda root, info, **kwargs: None
-#         extra_args = {"extra_arg": graphene.String()}
+        def resolver(root, info, **kwargs):
+            return None
 
-#         activate_field = ModelActivateField(
-#             plural_model_name=plural_model_name,
-#             model=sample_model,
-#             registry=registry,
-#             state_controller_field="is_active",
-#             resolver=resolver,
-#             **extra_args
-#         )
-#         payload_type = activate_field.type
+        extra_args = {"extra_arg": graphene.String()}
 
-#         assert isinstance(activate_field, graphene.Field)
-#         assert activate_field.name == f"activate{plural_model_name}"
-#         assert activate_field.args == {"where": graphene.Argument(graphene.ID, required=True), "extra_arg": graphene.Argument(graphene.String)}
-#         assert activate_field.resolver == resolver
+        with pytest.raises(ValueError) as exc_info:
+            ModelReadField(
+                singular_model_name=singular_model_name,
+                model={"new_model": str},
+                registry=registry,
+                resolver=resolver,
+                **extra_args,
+            )
+        assert (
+            "The model does not have a ModelSearchInputObjectType registered and it is required for the read operation"
+            in str(exc_info.value)
+        )
 
-#         assert issubclass(payload_type, graphene.ObjectType) # type: ignore
-#         assert "objects" in payload_type._meta.fields
-#         assert "errors_report" in payload_type._meta.fields
-#         assert isinstance(payload_type._meta.fields["objects"], ModelListField)
-#         assert isinstance(payload_type._meta.fields["objects"].type, graphene.List)
-#         assert isinstance(payload_type._meta.fields["objects"].type.of_type, graphene.NonNull)
-#         assert payload_type._meta.fields["objects"].type.of_type.of_type == MockModelObjectType
+    def test_wrap_resolve_with_resolver(self, registry):
+        # Setup: Create an instance of ModelReadField with a mock resolver
+        def mock_resolver(*args, **kwargs):
+            return "mock result"
 
-#         assert isinstance(payload_type._meta.fields["errors_report"], graphene.Field)
-#         assert isinstance(payload_type._meta.fields["errors_report"].type, graphene.List)
-#         assert payload_type._meta.fields["errors_report"].type.of_type == ErrorCollectionType
-#         assert "success" not in payload_type._meta.fields
+        field = ModelReadField(
+            singular_model_name="TestModel",
+            model=mock_model_operation_fields,
+            registry=registry,
+            resolver=mock_resolver,
+        )
 
+        # Action: Wrap the resolver using wrap_resolve method
+        wrapped_resolver = field.wrap_resolve(field.resolver)
 
-# class TestModelListField:
-#     def test_list_field_initialization(self, registry):
-#         plural_model_name = "Tests"
-#         resolver = lambda root, info, **kwargs: None
-#         extra_args = {"extra_arg": graphene.String()}
+        # Assert: Check if the returned resolver is not None and callable
+        assert wrapped_resolver is not None
+        assert callable(wrapped_resolver)
 
-#         list_field = ModelListField(
-#             plural_model_name=plural_model_name,
-#             model=sample_model,
-#             registry=registry,
-#             resolver=resolver,
-#             **extra_args
-#         )
-#         payload_type = list_field.type
+    def test_wrap_resolve_without_resolver(self, registry):
+        # Setup: Create an instance of ModelReadField without providing a resolver
+        field = ModelReadField(
+            singular_model_name="TestModel",
+            model=mock_model_operation_fields,
+            registry=registry,
+            resolver=None,  # Explicitly set resolver to None
+        )
 
-#         assert isinstance(list_field, graphene.Field)
-#         assert list_field.name == f"list{plural_model_name}"
-#         assert list_field.args == {"extra_arg": graphene.Argument(graphene.String)}
-#         assert list_field.resolver == resolver
+        # Action & Assert: Assert that calling wrap_resolve raises a ValueError
+        with pytest.raises(ValueError) as exc_info:
+            field.wrap_resolve(field.resolver)
 
-#         assert isinstance(payload_type, graphene.List) # type: ignore
-#         assert isinstance(payload_type.of_type, graphene.NonNull)
-#         assert payload_type.of_type.of_type == MockModelObjectType
+        assert "resolver is None for ModelReadField" in str(exc_info.value)
 
 
-# class TestModelSearchField:
-#     def test_search_field_initialization(self, registry):
-#         plural_model_name = "Tests"
-#         resolver = lambda root, info, **kwargs: None
-#         extra_args = {"extra_arg": graphene.String()}
+class TestModelDeleteField:
+    def test_delete_field_initialization(self, registry):
+        plural_model_name = "Tests"
 
-#         search_field = ModelSearchField(
-#             plural_model_name=plural_model_name,
-#             model=sample_model,
-#             registry=registry,
-#             resolver=resolver,
-#             **extra_args
-#         )
-#         payload_type = search_field.type
+        def resolver(root, info, **kwargs):
+            return None
 
-#         assert isinstance(search_field, graphene.Field)
-#         assert search_field.name == f"search{plural_model_name}"
-#         assert search_field.args == {"where": graphene.Argument(ModelSearchInputObjectType), "order_by": graphene.Argument(ModelOrderByInputObjectType), "pagination": graphene.Argument(PaginationConfigInput), "extra_arg": graphene.Argument(graphene.String)}
-#         assert search_field.resolver == resolver
+        extra_args = {"extra_arg": graphene.String()}
 
-#         assert isinstance(payload_type, graphene.ObjectType)
+        delete_field = ModelDeleteField(
+            plural_model_name=plural_model_name,
+            model=mock_model_operation_fields,
+            registry=registry,
+            resolver=resolver,
+            **extra_args,
+        )
+        payload_type = delete_field.type
+
+        assert isinstance(delete_field, graphene.Field)
+        assert delete_field.name == f"delete{plural_model_name}"
+        assert "where" in delete_field.args
+        assert "extra_arg" in delete_field.args
+        assert delete_field.resolver == resolver
+
+        assert issubclass(payload_type, graphene.ObjectType)  # type: ignore
+        assert "objects" in payload_type._meta.fields
+        assert "errors_report" in payload_type._meta.fields
+        assert isinstance(payload_type._meta.fields["objects"], graphene.Field)
+        assert isinstance(payload_type._meta.fields["objects"].type, graphene.List)
+        assert (
+            payload_type._meta.fields["objects"].type.of_type
+            == MockModelOperationFieldsObjectType
+        )
+
+        assert isinstance(payload_type._meta.fields["errors_report"], graphene.Field)
+        assert isinstance(
+            payload_type._meta.fields["errors_report"].type, graphene.List
+        )
+        assert (
+            payload_type._meta.fields["errors_report"].type.of_type
+            == ErrorCollectionType
+        )
+        assert "success" in payload_type._meta.fields
+        assert payload_type._meta.fields["success"].type == graphene.Boolean
+
+    def test_delete_field_without_model_search_input_object_type(self, registry):
+        plural_model_name = "Tests"
+
+        def resolver(root, info, **kwargs):
+            return None
+
+        extra_args = {"extra_arg": graphene.String()}
+
+        with pytest.raises(ValueError) as exc_info:
+            ModelDeleteField(
+                plural_model_name=plural_model_name,
+                model={"new_model": str},
+                registry=registry,
+                resolver=resolver,
+                **extra_args,
+            )
+        assert (
+            "The model does not have a ModelSearchInputObjectType registered and it is required for the delete operation"
+            in str(exc_info.value)
+        )
+
+    def test_wrap_resolve_with_resolver(self, registry):
+        # Setup: Create an instance of ModelDeleteField with a mock resolver
+        def mock_resolver(*args, **kwargs):
+            return "mock result"
+
+        field = ModelDeleteField(
+            plural_model_name="Tests",
+            model=mock_model_operation_fields,
+            registry=registry,
+            resolver=mock_resolver,
+        )
+
+        # Action: Wrap the resolver using wrap_resolve method
+        wrapped_resolver = field.wrap_resolve(field.resolver)
+
+        # Assert: Check if the returned resolver is not None and callable
+        assert wrapped_resolver is not None
+        assert callable(wrapped_resolver)
+
+    def test_wrap_resolve_without_resolver(self, registry):
+        # Setup: Create an instance of ModelDeleteField without providing a resolver
+        field = ModelDeleteField(
+            plural_model_name="Tests",
+            model=mock_model_operation_fields,
+            registry=registry,
+            resolver=None,  # Explicitly set resolver to None
+        )
+
+        # Action & Assert: Assert that calling wrap_resolve raises a ValueError
+        with pytest.raises(ValueError) as exc_info:
+            field.wrap_resolve(field.resolver)
+
+        assert "resolver is None for ModelDeleteField" in str(exc_info.value)
+
+
+class TestModelDeactivateField:
+    def test_deactivate_field_initialization(self, registry):
+        plural_model_name = "Tests"
+
+        def resolver(root, info, **kwargs):
+            return None
+
+        extra_args = {"extra_arg": graphene.String()}
+
+        deactivate_field = ModelDeactivateField(
+            plural_model_name=plural_model_name,
+            model=mock_model_operation_fields,
+            registry=registry,
+            state_controller_field="is_active",
+            resolver=resolver,
+            **extra_args,
+        )
+        payload_type = deactivate_field.type
+
+        assert isinstance(deactivate_field, graphene.Field)
+        assert deactivate_field.name == f"deactivate{plural_model_name}"
+        assert "where" in deactivate_field.args
+        assert "extra_arg" in deactivate_field.args
+        assert deactivate_field.resolver == resolver
+
+        assert issubclass(payload_type, graphene.ObjectType)  # type: ignore
+        assert "objects" in payload_type._meta.fields
+        assert "errors_report" in payload_type._meta.fields
+        assert isinstance(payload_type._meta.fields["objects"], graphene.Field)
+        assert isinstance(payload_type._meta.fields["objects"].type, graphene.List)
+        assert (
+            payload_type._meta.fields["objects"].type.of_type
+            == MockModelOperationFieldsObjectType
+        )
+
+        assert isinstance(payload_type._meta.fields["errors_report"], graphene.Field)
+        assert isinstance(
+            payload_type._meta.fields["errors_report"].type, graphene.List
+        )
+        assert (
+            payload_type._meta.fields["errors_report"].type.of_type
+            == ErrorCollectionType
+        )
+        assert "success" not in payload_type._meta.fields
+
+    def test_deactivate_field_without_model_search_input_object_type(self, registry):
+        plural_model_name = "Tests"
+
+        def resolver(root, info, **kwargs):
+            return None
+
+        extra_args = {"extra_arg": graphene.String()}
+
+        with pytest.raises(ValueError) as exc_info:
+            ModelDeactivateField(
+                plural_model_name=plural_model_name,
+                model={"new_model": str},
+                registry=registry,
+                state_controller_field="is_active",
+                resolver=resolver,
+                **extra_args,
+            )
+        assert (
+            "The model does not have a ModelSearchInputObjectType registered and it is required for the deactivate operation"
+            in str(exc_info.value)
+        )
+
+    def test_wrap_resolve_with_resolver(self, registry):
+        # Setup: Create an instance of ModelDeactivateField with a mock resolver
+        def mock_resolver(*args, **kwargs):
+            return "mock result"
+
+        field = ModelDeactivateField(
+            plural_model_name="Tests",
+            model=mock_model_operation_fields,
+            registry=registry,
+            state_controller_field="is_active",
+            resolver=mock_resolver,
+        )
+
+        # Action: Wrap the resolver using wrap_resolve method
+        wrapped_resolver = field.wrap_resolve(field.resolver)
+
+        # Assert: Check if the returned resolver is not None and callable
+        assert wrapped_resolver is not None
+        assert callable(wrapped_resolver)
+
+    def test_wrap_resolve_without_resolver(self, registry):
+        # Setup: Create an instance of ModelDeactivateField without providing a resolver
+        field = ModelDeactivateField(
+            plural_model_name="Tests",
+            model=mock_model_operation_fields,
+            registry=registry,
+            state_controller_field="is_active",
+            resolver=None,  # Explicitly set resolver to None
+        )
+
+        # Action & Assert: Assert that calling wrap_resolve raises a ValueError
+        with pytest.raises(ValueError) as exc_info:
+            field.wrap_resolve(field.resolver)
+
+        assert "resolver is None for ModelDeactivateField" in str(exc_info.value)
+
+
+class TestModelActivateField:
+    def test_activate_field_initialization(self, registry):
+        plural_model_name = "Tests"
+
+        def resolver(root, info, **kwargs):
+            return None
+
+        extra_args = {"extra_arg": graphene.String()}
+
+        activate_field = ModelActivateField(
+            plural_model_name=plural_model_name,
+            model=mock_model_operation_fields,
+            registry=registry,
+            state_controller_field="is_active",
+            resolver=resolver,
+            **extra_args,
+        )
+        payload_type = activate_field.type
+
+        assert isinstance(activate_field, graphene.Field)
+        assert activate_field.name == f"activate{plural_model_name}"
+        assert "where" in activate_field.args
+        assert "extra_arg" in activate_field.args
+        assert activate_field.resolver == resolver
+
+        assert issubclass(payload_type, graphene.ObjectType)  # type: ignore
+        assert "objects" in payload_type._meta.fields
+        assert "errors_report" in payload_type._meta.fields
+        assert isinstance(payload_type._meta.fields["objects"], graphene.Field)
+        assert isinstance(payload_type._meta.fields["objects"].type, graphene.List)
+        assert (
+            payload_type._meta.fields["objects"].type.of_type
+            == MockModelOperationFieldsObjectType
+        )
+
+        assert isinstance(payload_type._meta.fields["errors_report"], graphene.Field)
+        assert isinstance(
+            payload_type._meta.fields["errors_report"].type, graphene.List
+        )
+        assert (
+            payload_type._meta.fields["errors_report"].type.of_type
+            == ErrorCollectionType
+        )
+        assert "success" not in payload_type._meta.fields
+
+    def test_activate_field_without_model_search_input_object_type(self, registry):
+        plural_model_name = "Tests"
+
+        def resolver(root, info, **kwargs):
+            return None
+
+        extra_args = {"extra_arg": graphene.String()}
+
+        with pytest.raises(ValueError) as exc_info:
+            ModelActivateField(
+                plural_model_name=plural_model_name,
+                model={"new_model": str},
+                registry=registry,
+                state_controller_field="is_active",
+                resolver=resolver,
+                **extra_args,
+            )
+        assert (
+            "The model does not have a ModelSearchInputObjectType registered and it is required for the activate operation"
+            in str(exc_info.value)
+        )
+
+    def test_wrap_resolve_with_resolver(self, registry):
+        # Setup: Create an instance of ModelActivateField with a mock resolver
+        def mock_resolver(*args, **kwargs):
+            return "mock result"
+
+        field = ModelActivateField(
+            plural_model_name="Tests",
+            model=mock_model_operation_fields,
+            registry=registry,
+            state_controller_field="is_active",
+            resolver=mock_resolver,
+        )
+
+        # Action: Wrap the resolver using wrap_resolve method
+        wrapped_resolver = field.wrap_resolve(field.resolver)
+
+        # Assert: Check if the returned resolver is not None and callable
+        assert wrapped_resolver is not None
+        assert callable(wrapped_resolver)
+
+    def test_wrap_resolve_without_resolver(self, registry):
+        # Setup: Create an instance of ModelActivateField without providing a resolver
+        field = ModelActivateField(
+            plural_model_name="Tests",
+            model=mock_model_operation_fields,
+            registry=registry,
+            state_controller_field="is_active",
+            resolver=None,  # Explicitly set resolver to None
+        )
+
+        # Action & Assert: Assert that calling wrap_resolve raises a ValueError
+        with pytest.raises(ValueError) as exc_info:
+            field.wrap_resolve(field.resolver)
+
+        assert "resolver is None for ModelActivateField" in str(exc_info.value)
+
+
+class TestModelListField:
+    def test_list_field_initialization(self, registry):
+        plural_model_name = "Tests"
+
+        def resolver(root, info, **kwargs):
+            return None
+
+        extra_args = {"extra_arg": graphene.String()}
+
+        list_field = ModelListField(
+            plural_model_name=plural_model_name,
+            model=mock_model_operation_fields,
+            registry=registry,
+            resolver=resolver,
+            **extra_args,
+        )
+        payload_type = list_field.type
+
+        assert isinstance(list_field, graphene.Field)
+        assert list_field.name == f"list{plural_model_name}"
+        assert "extra_arg" in list_field.args
+        assert list_field.resolver == resolver
+
+        assert isinstance(payload_type, graphene.List)  # type: ignore
+        assert isinstance(payload_type.of_type, graphene.NonNull)
+        assert payload_type.of_type.of_type == MockModelOperationFieldsObjectType
+        print("====")
+
+    def test_wrap_resolve_with_resolver(self, registry):
+        # Setup: Create an instance of ModelListField with a mock resolver
+        def mock_resolver(*args, **kwargs):
+            return "mock result"
+
+        field = ModelListField(
+            plural_model_name="Tests",
+            model=mock_model_operation_fields,
+            registry=registry,
+            resolver=mock_resolver,
+        )
+
+        # Action: Wrap the resolver using wrap_resolve method
+        wrapped_resolver = field.wrap_resolve(field.resolver)
+
+        # Assert: Check if the returned resolver is not None and callable
+        assert wrapped_resolver is not None
+        assert callable(wrapped_resolver)
+
+    def test_wrap_resolve_without_resolver(self, registry):
+        # Setup: Create an instance of ModelListField without providing a resolver
+        field = ModelListField(
+            plural_model_name="Tests",
+            model=mock_model_operation_fields,
+            registry=registry,
+            resolver=None,  # Explicitly set resolver to None
+        )
+
+        # Action & Assert: Assert that calling wrap_resolve raises a ValueError
+        with pytest.raises(ValueError) as exc_info:
+            field.wrap_resolve(field.resolver)
+
+        assert "resolver is None for ModelListField" in str(exc_info.value)
+
+
+class TestModelSearchField:
+    def test_search_field_initialization(self, registry):
+        plural_model_name = "Tests"
+
+        def resolver(root, info, **kwargs):
+            return None
+
+        extra_args = {"extra_arg": graphene.String()}
+
+        search_field = ModelSearchField(
+            plural_model_name=plural_model_name,
+            model=mock_model_operation_fields,
+            registry=registry,
+            resolver=resolver,
+            **extra_args,
+        )
+
+        assert isinstance(search_field, graphene.Field)
+        assert search_field.name == f"search{plural_model_name}"
+        assert "where" in search_field.args
+        assert "order_by" in search_field.args
+        assert "pagination_config" in search_field.args
+        assert "extra_arg" in search_field.args
+        assert search_field.resolver == resolver
+
+    def test_search_field_without_model_paginated_object_type(self, registry):
+        plural_model_name = "Tests"
+
+        def resolver(root, info, **kwargs):
+            return None
+
+        extra_args = {"extra_arg": graphene.String()}
+
+        with pytest.raises(ValueError) as exc_info:
+            ModelSearchField(
+                plural_model_name=plural_model_name,
+                model={"new_model": str},
+                registry=registry,
+                resolver=resolver,
+                **extra_args,
+            )
+        assert (
+            "The model does not have a ModelPaginatedObjectType registered and it is required for the search operation"
+            in str(exc_info.value)
+        )
+
+    def test_wrap_resolve_with_resolver(self, registry):
+        # Setup: Create an instance of ModelSearchField with a mock resolver
+        def mock_resolver(*args, **kwargs):
+            return "mock result"
+
+        field = ModelSearchField(
+            plural_model_name="Tests",
+            model=mock_model_operation_fields,
+            registry=registry,
+            resolver=mock_resolver,
+        )
+
+        # Action: Wrap the resolver using wrap_resolve method
+        wrapped_resolver = field.wrap_resolve(field.resolver)
+
+        # Assert: Check if the returned resolver is not None and callable
+        assert wrapped_resolver is not None
+        assert callable(wrapped_resolver)
+
+    def test_wrap_resolve_without_resolver(self, registry):
+        # Setup: Create an instance of ModelSearchField without providing a resolver
+        field = ModelSearchField(
+            plural_model_name="Tests",
+            model=mock_model_operation_fields,
+            registry=registry,
+            resolver=None,  # Explicitly set resolver to None
+        )
+
+        # Action & Assert: Assert that calling wrap_resolve raises a ValueError
+        with pytest.raises(ValueError) as exc_info:
+            field.wrap_resolve(field.resolver)
+
+        assert "resolver is None for ModelSearchField" in str(exc_info.value)
+
+    def test_search_field_without_model_search_input_object_type(self):
+        new_mock_model = {"new_model": str, "mock2": int}
+
+        class NewMockModelOperationFieldsObjectType(ModelObjectType):
+            class Meta:
+                model = new_mock_model
+
+        class NewMockModelOperationFieldsPaginatedObjectType(ModelPaginatedObjectType):
+            class Meta:
+                model_object_type = NewMockModelOperationFieldsObjectType
+
+        registry = get_global_registry()
+        registry.register_model(
+            new_mock_model,
+            TypeRegistryForModelEnum.OBJECT_TYPE.value,
+            NewMockModelOperationFieldsObjectType,
+        )
+        registry.register_model(
+            new_mock_model,
+            TypeRegistryForModelEnum.PAGINATED_OBJECT_TYPE.value,
+            NewMockModelOperationFieldsPaginatedObjectType,
+        )
+
+        plural_model_name = "Tests"
+
+        def resolver(root, info, **kwargs):
+            return None
+
+        extra_args = {"extra_arg": graphene.String()}
+
+        with pytest.raises(ValueError) as exc_info:
+            ModelSearchField(
+                plural_model_name=plural_model_name,
+                model=new_mock_model,
+                registry=registry,
+                resolver=resolver,
+                **extra_args,
+            )
+        assert (
+            "The model does not have a ModelSearchInputObjectType registered and it is required for the search operation"
+            in str(exc_info.value)
+        )
+
+    def test_search_field_without_model_order_by_input_object_type(self):
+        new_mock_model = {"new_model": str, "mock1": int}
+
+        class MockModelOperationFieldsObjectType(ModelObjectType):
+            class Meta:
+                model = new_mock_model
+
+        class MockModelOperationFieldsPaginatedObjectType(ModelPaginatedObjectType):
+            class Meta:
+                model_object_type = MockModelOperationFieldsObjectType
+
+        class MockModelOperationFieldsSearchInputObjectType(ModelSearchInputObjectType):
+            class Meta:
+                model = new_mock_model
+
+        registry = get_global_registry()
+        registry.register_model(
+            new_mock_model,
+            TypeRegistryForModelEnum.OBJECT_TYPE.value,
+            MockModelOperationFieldsObjectType,
+        )
+        registry.register_model(
+            new_mock_model,
+            TypeRegistryForModelEnum.PAGINATED_OBJECT_TYPE.value,
+            MockModelOperationFieldsPaginatedObjectType,
+        )
+        registry.register_model(
+            new_mock_model,
+            TypeRegistryForModelEnum.INPUT_OBJECT_TYPE_FOR_SEARCH.value,
+            MockModelOperationFieldsSearchInputObjectType,
+        )
+
+        plural_model_name = "Tests"
+
+        def resolver(root, info, **kwargs):
+            return None
+
+        extra_args = {"extra_arg": graphene.String()}
+
+        with pytest.raises(ValueError) as exc_info:
+            ModelSearchField(
+                plural_model_name=plural_model_name,
+                model=new_mock_model,
+                registry=registry,
+                resolver=resolver,
+                **extra_args,
+            )
+        assert (
+            "The model does not have a ModelOrderByInputObjectType registered and it is required for the search operation"
+            in str(exc_info.value)
+        )
