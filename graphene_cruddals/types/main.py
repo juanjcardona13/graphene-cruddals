@@ -10,6 +10,8 @@ from graphene_cruddals.registry.registry_global import (
 )
 from graphene_cruddals.utils.typing.custom_typing import (
     GRAPHENE_TYPE,
+    TypeRegistryForField,
+    TypeRegistryForFieldEnum,
     TypeRegistryForModelEnum,
     TypesMutation,
     TypesMutationEnum,
@@ -39,6 +41,7 @@ def construct_fields(
     registry: RegistryGlobal,
     only_fields: Union[List[str], Literal["__all__"], None] = None,
     exclude_fields: Union[List[str], None] = None,
+    type_of_registry: TypeRegistryForField = TypeRegistryForFieldEnum.OUTPUT.value,
 ):
     fields = OrderedDict()
     final_fields = get_fields_function(model)
@@ -53,8 +56,8 @@ def construct_fields(
             continue
 
         converted = field_converter_function(name, field, registry)
-        # TODO: (Critico) -> debo de guardar en el registry el campo con su conversión
         fields[name] = converted
+        registry.register_field(field, type_of_registry, converted)
 
     return fields
 
@@ -92,6 +95,7 @@ class ModelObjectType(graphene.ObjectType):
             registry,
             only_fields,
             exclude_fields,
+            TypeRegistryForFieldEnum.OUTPUT.value,
         )
 
         model_fields = yank_fields_from_attrs(converted_fields, _as=graphene.Field)
@@ -181,16 +185,21 @@ class ModelInputObjectType(graphene.InputObjectType):
             type_of_registry = (
                 TypeRegistryForModelEnum.INPUT_OBJECT_TYPE.value
             )  # "input_object_type"
+            type_of_registry_for_field = (
+                TypeRegistryForFieldEnum.INPUT_FOR_CREATE_UPDATE.value
+            )
         elif type_mutation == TypesMutationEnum.CREATE.value:
             type_of_registry = (
                 TypeRegistryForModelEnum.INPUT_OBJECT_TYPE_FOR_CREATE.value
             )  # "input_object_type_for_create"
+            type_of_registry_for_field = TypeRegistryForFieldEnum.INPUT_FOR_CREATE.value
             if not class_name.startswith("Create"):
                 class_name = f"Create{class_name}"
         elif type_mutation == TypesMutationEnum.UPDATE.value:
             type_of_registry = (
                 TypeRegistryForModelEnum.INPUT_OBJECT_TYPE_FOR_UPDATE.value
             )  # "input_object_type_for_update"
+            type_of_registry_for_field = TypeRegistryForFieldEnum.INPUT_FOR_UPDATE.value
             if not class_name.startswith("Update"):
                 class_name = f"Update{class_name}"
 
@@ -204,6 +213,7 @@ class ModelInputObjectType(graphene.InputObjectType):
             registry,
             only_fields,
             exclude_fields,
+            type_of_registry_for_field,
         )
 
         model_fields = yank_fields_from_attrs(converted_fields, _as=graphene.InputField)
@@ -243,6 +253,7 @@ class ModelSearchInputObjectType(graphene.InputObjectType):
             registry,
             only_fields,
             exclude_fields,
+            TypeRegistryForFieldEnum.INPUT_FOR_SEARCH.value,
         )
         converted_fields.update(
             {
@@ -285,6 +296,7 @@ class ModelOrderByInputObjectType(graphene.InputObjectType):
             registry,
             only_fields,
             exclude_fields,
+            TypeRegistryForFieldEnum.INPUT_FOR_ORDER_BY.value,
         )
         model_fields = yank_fields_from_attrs(converted_fields, _as=graphene.InputField)
         for name, field in model_fields.items():

@@ -1,10 +1,12 @@
 import pytest
 
+import graphene
 from graphene_cruddals.registry.registry_global import (
     RegistryGlobal,
     get_global_registry,
     reset_global_registry,
 )
+from graphene_cruddals.utils.typing.custom_typing import TypeRegistryForFieldEnum
 
 
 @pytest.fixture
@@ -38,11 +40,16 @@ def test_get_all_models(reset_registry, registry):
     ), "Incorrect number of models registered"
 
 
-def test_get_all_fields(registry):
-    registry.register_field(["field1"], "type_f1", "value_f1")
-    registry.register_field(["field2"], "type_f2", "value_f2")
+def test_get_all_fields():
+    custom_registry = get_global_registry("CustomRegistry")
+    custom_registry.register_field(
+        ["field1"], TypeRegistryForFieldEnum.OUTPUT.value, graphene.String()
+    )
+    custom_registry.register_field(
+        ["field2"], TypeRegistryForFieldEnum.OUTPUT.value, graphene.String()
+    )
     assert (
-        len(registry.get_all_fields_registered()) == 2
+        len(custom_registry.get_all_fields_registered()) == 2
     ), "Incorrect number of fields registered"
 
 
