@@ -125,6 +125,7 @@ class CruddalsBuilderConfig:
     list_resolver: Callable[..., Any]
     search_resolver: Callable[..., Any]
 
+    field_for_activate_deactivate: str = "is_active"
     plural_pascal_case_name: Union[str, None] = None
     prefix: str = ""
     suffix: str = ""
@@ -862,7 +863,7 @@ class BuilderCruddalsModel(BaseCruddals):
             plural_model_name=self.model_name_in_different_case["plural_pascal_case"],
             model=self.model,
             registry=self.registry,
-            state_controller_field="is_active",  # TODO: Change to dynamic
+            state_controller_field=config.field_for_activate_deactivate,
             resolver=resolver,
             **extra_arguments,
         )
@@ -884,7 +885,7 @@ class BuilderCruddalsModel(BaseCruddals):
             plural_model_name=self.model_name_in_different_case["plural_pascal_case"],
             model=self.model,
             registry=self.registry,
-            state_controller_field="is_active",  # TODO: Change to dynamic
+            state_controller_field=config.field_for_activate_deactivate,
             resolver=resolver,
             **extra_arguments,
         )
