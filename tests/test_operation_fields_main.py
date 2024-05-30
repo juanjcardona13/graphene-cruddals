@@ -36,17 +36,21 @@ mock_database = [
     {"id": 3, "name": "test3", "active": True},
 ]
 
-mock_model_operation_fields = {
-    "id": int,
-    "name": str,
-    "active": bool,
-    "mock_field": str,
-}
+
+class MockModelOperationFields:
+    id: int
+    name: str
+    active: bool
+    mock_field: str
+
+
+class NewMockModel:
+    new_field: str
 
 
 class MockModelOperationFieldsObjectType(ModelObjectType):
     class Meta:
-        model = mock_model_operation_fields
+        model = MockModelOperationFields
 
 
 class MockModelOperationFieldsPaginatedObjectType(ModelPaginatedObjectType):
@@ -56,54 +60,54 @@ class MockModelOperationFieldsPaginatedObjectType(ModelPaginatedObjectType):
 
 class MockModelOperationFieldsInputObjectType(ModelInputObjectType):
     class Meta:
-        model = mock_model_operation_fields
+        model = MockModelOperationFields
 
 
 class MockModelOperationFieldsSearchInputObjectType(ModelSearchInputObjectType):
     class Meta:
-        model = mock_model_operation_fields
+        model = MockModelOperationFields
 
 
 class MockModelOperationFieldsOrderByInputObjectType(ModelOrderByInputObjectType):
     class Meta:
-        model = mock_model_operation_fields
+        model = MockModelOperationFields
 
 
 @pytest.fixture
 def registry():
     registry = get_global_registry()
     registry.register_model(
-        mock_model_operation_fields,
+        MockModelOperationFields,
         TypeRegistryForModelEnum.OBJECT_TYPE.value,
         MockModelOperationFieldsObjectType,
     )
     registry.register_model(
-        mock_model_operation_fields,
+        MockModelOperationFields,
         TypeRegistryForModelEnum.PAGINATED_OBJECT_TYPE.value,
         MockModelOperationFieldsPaginatedObjectType,
     )
     registry.register_model(
-        mock_model_operation_fields,
+        MockModelOperationFields,
         TypeRegistryForModelEnum.INPUT_OBJECT_TYPE.value,
         MockModelOperationFieldsInputObjectType,
     )
     registry.register_model(
-        mock_model_operation_fields,
+        MockModelOperationFields,
         TypeRegistryForModelEnum.INPUT_OBJECT_TYPE_FOR_CREATE.value,
         MockModelOperationFieldsInputObjectType,
     )
     registry.register_model(
-        mock_model_operation_fields,
+        MockModelOperationFields,
         TypeRegistryForModelEnum.INPUT_OBJECT_TYPE_FOR_UPDATE.value,
         MockModelOperationFieldsInputObjectType,
     )
     registry.register_model(
-        mock_model_operation_fields,
+        MockModelOperationFields,
         TypeRegistryForModelEnum.INPUT_OBJECT_TYPE_FOR_SEARCH.value,
         MockModelOperationFieldsSearchInputObjectType,
     )
     registry.register_model(
-        mock_model_operation_fields,
+        MockModelOperationFields,
         TypeRegistryForModelEnum.INPUT_OBJECT_TYPE_FOR_ORDER_BY.value,
         MockModelOperationFieldsOrderByInputObjectType,
     )
@@ -127,7 +131,7 @@ def client():
 
 def test_get_object_type_payload_basic(registry):
     payload_type = get_object_type_payload(
-        model=mock_model_operation_fields,
+        model=MockModelOperationFields,
         registry=registry,
         name_for_output_type="MockModelOperationFieldsObjectType",
         plural_model_name="Tests",
@@ -153,7 +157,7 @@ def test_get_object_type_payload_basic(registry):
 
 def test_get_object_type_payload_include_success(registry):
     payload_type = get_object_type_payload(
-        model=mock_model_operation_fields,
+        model=MockModelOperationFields,
         registry=registry,
         name_for_output_type="MockModelOperationFieldsObjectType",
         plural_model_name="Tests",
@@ -213,7 +217,7 @@ class TestModelCreateUpdateField:
         field = ModelCreateUpdateField(
             plural_model_name="Tests",
             type_operation="Create",
-            model=mock_model_operation_fields,
+            model=MockModelOperationFields,
             registry=registry,
         )
         payload_type = field.type
@@ -247,7 +251,7 @@ class TestModelCreateUpdateField:
         field = ModelCreateUpdateField(
             plural_model_name="Tests",
             type_operation="Update",
-            model=mock_model_operation_fields,
+            model=MockModelOperationFields,
             registry=registry,
         )
         payload_type = field.type
@@ -279,10 +283,14 @@ class TestModelCreateUpdateField:
 
     def test_create_update_field_without_input_object_type(self, registry):
         with pytest.raises(ValueError) as exc_info:
+
+            class NewModel:
+                new_field = str
+
             ModelCreateUpdateField(
                 plural_model_name="Tests",
                 type_operation="Create",
-                model={"new_model": str},
+                model=NewModel,
                 registry=registry,
             )
         assert "The model does not have a ModelInputObjectType registered" in str(
@@ -297,7 +305,7 @@ class TestModelCreateUpdateField:
         field = ModelCreateUpdateField(
             plural_model_name="Tests",
             type_operation="Create",
-            model=mock_model_operation_fields,
+            model=MockModelOperationFields,
             registry=registry,
             resolver=mock_resolver,
         )
@@ -314,7 +322,7 @@ class TestModelCreateUpdateField:
         field = ModelCreateUpdateField(
             plural_model_name="Tests",
             type_operation="Create",
-            model=mock_model_operation_fields,
+            model=MockModelOperationFields,
             registry=registry,
             resolver=None,  # Explicitly set resolver to None
         )
@@ -337,7 +345,7 @@ class TestModelReadField:
 
         read_field = ModelReadField(
             singular_model_name=singular_model_name,
-            model=mock_model_operation_fields,
+            model=MockModelOperationFields,
             registry=registry,
             resolver=resolver,
             **extra_args,
@@ -361,7 +369,7 @@ class TestModelReadField:
         with pytest.raises(ValueError) as exc_info:
             ModelReadField(
                 singular_model_name=singular_model_name,
-                model={"new_model": str},
+                model=NewMockModel,
                 registry=registry,
                 resolver=resolver,
                 **extra_args,
@@ -378,7 +386,7 @@ class TestModelReadField:
 
         field = ModelReadField(
             singular_model_name="TestModel",
-            model=mock_model_operation_fields,
+            model=MockModelOperationFields,
             registry=registry,
             resolver=mock_resolver,
         )
@@ -394,7 +402,7 @@ class TestModelReadField:
         # Setup: Create an instance of ModelReadField without providing a resolver
         field = ModelReadField(
             singular_model_name="TestModel",
-            model=mock_model_operation_fields,
+            model=MockModelOperationFields,
             registry=registry,
             resolver=None,  # Explicitly set resolver to None
         )
@@ -417,7 +425,7 @@ class TestModelDeleteField:
 
         delete_field = ModelDeleteField(
             plural_model_name=plural_model_name,
-            model=mock_model_operation_fields,
+            model=MockModelOperationFields,
             registry=registry,
             resolver=resolver,
             **extra_args,
@@ -462,7 +470,7 @@ class TestModelDeleteField:
         with pytest.raises(ValueError) as exc_info:
             ModelDeleteField(
                 plural_model_name=plural_model_name,
-                model={"new_model": str},
+                model=NewMockModel,
                 registry=registry,
                 resolver=resolver,
                 **extra_args,
@@ -479,7 +487,7 @@ class TestModelDeleteField:
 
         field = ModelDeleteField(
             plural_model_name="Tests",
-            model=mock_model_operation_fields,
+            model=MockModelOperationFields,
             registry=registry,
             resolver=mock_resolver,
         )
@@ -495,7 +503,7 @@ class TestModelDeleteField:
         # Setup: Create an instance of ModelDeleteField without providing a resolver
         field = ModelDeleteField(
             plural_model_name="Tests",
-            model=mock_model_operation_fields,
+            model=MockModelOperationFields,
             registry=registry,
             resolver=None,  # Explicitly set resolver to None
         )
@@ -518,7 +526,7 @@ class TestModelDeactivateField:
 
         deactivate_field = ModelDeactivateField(
             plural_model_name=plural_model_name,
-            model=mock_model_operation_fields,
+            model=MockModelOperationFields,
             registry=registry,
             state_controller_field="is_active",
             resolver=resolver,
@@ -563,7 +571,7 @@ class TestModelDeactivateField:
         with pytest.raises(ValueError) as exc_info:
             ModelDeactivateField(
                 plural_model_name=plural_model_name,
-                model={"new_model": str},
+                model=NewMockModel,
                 registry=registry,
                 state_controller_field="is_active",
                 resolver=resolver,
@@ -581,7 +589,7 @@ class TestModelDeactivateField:
 
         field = ModelDeactivateField(
             plural_model_name="Tests",
-            model=mock_model_operation_fields,
+            model=MockModelOperationFields,
             registry=registry,
             state_controller_field="is_active",
             resolver=mock_resolver,
@@ -598,7 +606,7 @@ class TestModelDeactivateField:
         # Setup: Create an instance of ModelDeactivateField without providing a resolver
         field = ModelDeactivateField(
             plural_model_name="Tests",
-            model=mock_model_operation_fields,
+            model=MockModelOperationFields,
             registry=registry,
             state_controller_field="is_active",
             resolver=None,  # Explicitly set resolver to None
@@ -622,7 +630,7 @@ class TestModelActivateField:
 
         activate_field = ModelActivateField(
             plural_model_name=plural_model_name,
-            model=mock_model_operation_fields,
+            model=MockModelOperationFields,
             registry=registry,
             state_controller_field="is_active",
             resolver=resolver,
@@ -667,7 +675,7 @@ class TestModelActivateField:
         with pytest.raises(ValueError) as exc_info:
             ModelActivateField(
                 plural_model_name=plural_model_name,
-                model={"new_model": str},
+                model=NewMockModel,
                 registry=registry,
                 state_controller_field="is_active",
                 resolver=resolver,
@@ -685,7 +693,7 @@ class TestModelActivateField:
 
         field = ModelActivateField(
             plural_model_name="Tests",
-            model=mock_model_operation_fields,
+            model=MockModelOperationFields,
             registry=registry,
             state_controller_field="is_active",
             resolver=mock_resolver,
@@ -702,7 +710,7 @@ class TestModelActivateField:
         # Setup: Create an instance of ModelActivateField without providing a resolver
         field = ModelActivateField(
             plural_model_name="Tests",
-            model=mock_model_operation_fields,
+            model=MockModelOperationFields,
             registry=registry,
             state_controller_field="is_active",
             resolver=None,  # Explicitly set resolver to None
@@ -726,7 +734,7 @@ class TestModelListField:
 
         list_field = ModelListField(
             plural_model_name=plural_model_name,
-            model=mock_model_operation_fields,
+            model=MockModelOperationFields,
             registry=registry,
             resolver=resolver,
             **extra_args,
@@ -750,7 +758,7 @@ class TestModelListField:
 
         field = ModelListField(
             plural_model_name="Tests",
-            model=mock_model_operation_fields,
+            model=MockModelOperationFields,
             registry=registry,
             resolver=mock_resolver,
         )
@@ -766,7 +774,7 @@ class TestModelListField:
         # Setup: Create an instance of ModelListField without providing a resolver
         field = ModelListField(
             plural_model_name="Tests",
-            model=mock_model_operation_fields,
+            model=MockModelOperationFields,
             registry=registry,
             resolver=None,  # Explicitly set resolver to None
         )
@@ -789,7 +797,7 @@ class TestModelSearchField:
 
         search_field = ModelSearchField(
             plural_model_name=plural_model_name,
-            model=mock_model_operation_fields,
+            model=MockModelOperationFields,
             registry=registry,
             resolver=resolver,
             **extra_args,
@@ -814,7 +822,7 @@ class TestModelSearchField:
         with pytest.raises(ValueError) as exc_info:
             ModelSearchField(
                 plural_model_name=plural_model_name,
-                model={"new_model": str},
+                model=NewMockModel,
                 registry=registry,
                 resolver=resolver,
                 **extra_args,
@@ -831,7 +839,7 @@ class TestModelSearchField:
 
         field = ModelSearchField(
             plural_model_name="Tests",
-            model=mock_model_operation_fields,
+            model=MockModelOperationFields,
             registry=registry,
             resolver=mock_resolver,
         )
@@ -847,7 +855,7 @@ class TestModelSearchField:
         # Setup: Create an instance of ModelSearchField without providing a resolver
         field = ModelSearchField(
             plural_model_name="Tests",
-            model=mock_model_operation_fields,
+            model=MockModelOperationFields,
             registry=registry,
             resolver=None,  # Explicitly set resolver to None
         )
@@ -859,11 +867,13 @@ class TestModelSearchField:
         assert "resolver is None for ModelSearchField" in str(exc_info.value)
 
     def test_search_field_without_model_search_input_object_type(self):
-        new_mock_model = {"new_model": str, "mock2": int}
+        class NewMockModel:
+            new_field = str
+            mock2 = int
 
         class NewMockModelOperationFieldsObjectType(ModelObjectType):
             class Meta:
-                model = new_mock_model
+                model = NewMockModel
 
         class NewMockModelOperationFieldsPaginatedObjectType(ModelPaginatedObjectType):
             class Meta:
@@ -871,12 +881,12 @@ class TestModelSearchField:
 
         registry = get_global_registry()
         registry.register_model(
-            new_mock_model,
+            NewMockModel,
             TypeRegistryForModelEnum.OBJECT_TYPE.value,
             NewMockModelOperationFieldsObjectType,
         )
         registry.register_model(
-            new_mock_model,
+            NewMockModel,
             TypeRegistryForModelEnum.PAGINATED_OBJECT_TYPE.value,
             NewMockModelOperationFieldsPaginatedObjectType,
         )
@@ -891,7 +901,7 @@ class TestModelSearchField:
         with pytest.raises(ValueError) as exc_info:
             ModelSearchField(
                 plural_model_name=plural_model_name,
-                model=new_mock_model,
+                model=NewMockModel,
                 registry=registry,
                 resolver=resolver,
                 **extra_args,
@@ -902,11 +912,13 @@ class TestModelSearchField:
         )
 
     def test_search_field_without_model_order_by_input_object_type(self):
-        new_mock_model = {"new_model": str, "mock1": int}
+        class NewMockModel:
+            new_field = str
+            mock1 = int
 
         class MockModelOperationFieldsObjectType(ModelObjectType):
             class Meta:
-                model = new_mock_model
+                model = NewMockModel
 
         class MockModelOperationFieldsPaginatedObjectType(ModelPaginatedObjectType):
             class Meta:
@@ -914,21 +926,21 @@ class TestModelSearchField:
 
         class MockModelOperationFieldsSearchInputObjectType(ModelSearchInputObjectType):
             class Meta:
-                model = new_mock_model
+                model = NewMockModel
 
         registry = get_global_registry()
         registry.register_model(
-            new_mock_model,
+            NewMockModel,
             TypeRegistryForModelEnum.OBJECT_TYPE.value,
             MockModelOperationFieldsObjectType,
         )
         registry.register_model(
-            new_mock_model,
+            NewMockModel,
             TypeRegistryForModelEnum.PAGINATED_OBJECT_TYPE.value,
             MockModelOperationFieldsPaginatedObjectType,
         )
         registry.register_model(
-            new_mock_model,
+            NewMockModel,
             TypeRegistryForModelEnum.INPUT_OBJECT_TYPE_FOR_SEARCH.value,
             MockModelOperationFieldsSearchInputObjectType,
         )
@@ -943,7 +955,7 @@ class TestModelSearchField:
         with pytest.raises(ValueError) as exc_info:
             ModelSearchField(
                 plural_model_name=plural_model_name,
-                model=new_mock_model,
+                model=NewMockModel,
                 registry=registry,
                 resolver=resolver,
                 **extra_args,

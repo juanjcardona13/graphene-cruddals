@@ -65,7 +65,7 @@ class CruddalsBuilderConfig:
     Configuration class for building CRUDDALS models.
 
     Attributes:
-        model (Dict[str, Any]): The model dictionary representing the data structure.
+        model (Type): The model dictionary representing the data structure.
         pascal_case_name (str): The name of the model in PascalCase.
         output_field_converter_function (Callable): Function to convert model fields to GraphQL output fields.
         input_field_converter_function (Callable): Function to convert model fields to GraphQL input fields.
@@ -89,29 +89,29 @@ class CruddalsBuilderConfig:
         registry (Union[RegistryGlobal, None]): Global registry for models, defaults to None, if not provided, it uses the global registry.
     """
 
-    model: Dict[str, Any]
+    model: Type
     pascal_case_name: str
 
-    get_fields_for_output: Callable[[Dict[str, Any]], Dict[str, Any]]
+    get_fields_for_output: Callable[[Type], Dict[str, Any]]
     output_field_converter_function: Callable[[str, Any, RegistryGlobal], GRAPHENE_TYPE]
 
-    get_fields_for_input: Callable[[Dict[str, Any]], Dict[str, Any]]
+    get_fields_for_input: Callable[[Type], Dict[str, Any]]
     input_field_converter_function: Callable[[str, Any, RegistryGlobal], GRAPHENE_TYPE]
 
-    get_fields_for_create_input: Callable[[Dict[str, Any]], Dict[str, Any]]
+    get_fields_for_create_input: Callable[[Type], Dict[str, Any]]
     create_input_field_converter_function: Callable[
         [str, Any, RegistryGlobal], GRAPHENE_TYPE
     ]
 
-    get_fields_for_update_input: Callable[[Dict[str, Any]], Dict[str, Any]]
+    get_fields_for_update_input: Callable[[Type], Dict[str, Any]]
     update_input_field_converter_function: Callable[
         [str, Any, RegistryGlobal], GRAPHENE_TYPE
     ]
 
-    get_fields_for_filter: Callable[[Dict[str, Any]], Dict[str, Any]]
+    get_fields_for_filter: Callable[[Type], Dict[str, Any]]
     filter_field_converter_function: Callable[[str, Any, RegistryGlobal], GRAPHENE_TYPE]
 
-    get_fields_for_order_by: Callable[[Dict[str, Any]], Dict[str, Any]]
+    get_fields_for_order_by: Callable[[Type], Dict[str, Any]]
     order_by_field_converter_function: Callable[
         [str, Any, RegistryGlobal], GRAPHENE_TYPE
     ]
@@ -150,7 +150,7 @@ class BaseCruddals:
     Base class for build CRUDDALS operations.
 
     Attributes:
-        model (Dict[str, Any]): The model dictionary.
+        model (Type): The model dictionary.
         prefix (str): Prefix to be used in naming.
         suffix (str): Suffix to be used in naming.
         model_name_in_different_case (NameCaseType): Model names in various cases.
@@ -173,7 +173,7 @@ class BaseCruddals:
         search_field (Union[ModelSearchField, None]): Graphene Field configuration for search operation.
     """
 
-    model: Dict[str, Any]
+    model: Type
     prefix: str = ""
     suffix: str = ""
     model_name_in_different_case: NameCaseType
@@ -922,11 +922,6 @@ class BuilderCruddalsModel(BaseCruddals):
         resolver = self.wrap_resolver_with_pre_post_resolvers(
             config.search_resolver, extra_pre_post_resolvers, name_function
         )
-        print(self.model_name_in_different_case["plural_pascal_case"])
-        print(self.model)
-        print(self.registry)
-        print(resolver)
-        print(extra_arguments)
         return ModelSearchField(
             plural_model_name=self.model_name_in_different_case["plural_pascal_case"],
             model=self.model,

@@ -35,8 +35,8 @@ class PaginationInterface(graphene.Interface):
 
 
 def construct_fields(
-    model: Dict[str, Any],
-    get_fields_function: Callable[[Dict[str, Any]], Dict[str, Any]],
+    model: Type,
+    get_fields_function: Callable[[Type], Dict[str, Any]],
     field_converter_function: Callable[[str, Any, RegistryGlobal], GRAPHENE_TYPE],
     registry: RegistryGlobal,
     only_fields: Union[List[str], Literal["__all__"], None] = None,
@@ -62,8 +62,19 @@ def construct_fields(
     return fields
 
 
+def convert_class_to_dict(cls: Type) -> Dict[str, Any]:
+    try:
+        return cls.__annotations__
+    except AttributeError:
+        return {
+            name: field
+            for name, field in cls.__dict__.items()
+            if not name.startswith("__") and not callable(field)
+        }
+
+
 class ModelObjectTypeOptions(ObjectTypeOptions):
-    model: Dict[str, Any]
+    model: Type
     registry: RegistryGlobal
 
 
@@ -75,11 +86,13 @@ class ModelObjectType(graphene.ObjectType):
         possible_types: Tuple[Type[graphene.ObjectType], ...] = (),
         default_resolver: Union[Callable, None] = None,
         _meta: Union[ModelObjectTypeOptions, None] = None,
-        model: Dict[str, Any] = None,
+        model: Type = None,
         field_converter_function: Callable[
             [str, Any, RegistryGlobal], GRAPHENE_TYPE
         ] = lambda x, y, z: graphene.String(),
-        get_fields_function: Callable[[Dict[str, Any]], Dict[str, Any]] = lambda x: x,
+        get_fields_function: Callable[
+            [Type], Dict[str, Any]
+        ] = lambda x: convert_class_to_dict(x),
         registry: Union[RegistryGlobal, None] = None,
         only_fields: Union[List[str], Literal["__all__"], None] = None,
         exclude_fields: Union[List[str], None] = None,
@@ -168,9 +181,11 @@ class ModelInputObjectType(graphene.InputObjectType):
         cls,
         container=None,
         _meta: Union[ModelObjectTypeOptions, None] = None,
-        model: Dict[str, Any] = None,
+        model: Type = None,
         type_mutation: TypesMutation = TypesMutationEnum.CREATE_UPDATE.value,
-        get_fields_function: Callable[[Dict[str, Any]], Dict[str, Any]] = lambda x: x,
+        get_fields_function: Callable[
+            [Type], Dict[str, Any]
+        ] = lambda x: convert_class_to_dict(x),
         field_converter_function: Callable[
             [str, Any, RegistryGlobal], GRAPHENE_TYPE
         ] = lambda x, y, z: graphene.String(),
@@ -234,8 +249,10 @@ class ModelSearchInputObjectType(graphene.InputObjectType):
         cls,
         container=None,
         _meta: Union[ModelObjectTypeOptions, None] = None,
-        model: Dict[str, Any] = None,
-        get_fields_function: Callable[[Dict[str, Any]], Dict[str, Any]] = lambda x: x,
+        model: Type = None,
+        get_fields_function: Callable[
+            [Type], Dict[str, Any]
+        ] = lambda x: convert_class_to_dict(x),
         field_converter_function: Callable[
             [str, Any, RegistryGlobal], GRAPHENE_TYPE
         ] = lambda x, y, z: graphene.String(),
@@ -277,8 +294,10 @@ class ModelOrderByInputObjectType(graphene.InputObjectType):
         cls,
         container=None,
         _meta: Union[ModelObjectTypeOptions, None] = None,
-        model: Dict[str, Any] = None,
-        get_fields_function: Callable[[Dict[str, Any]], Dict[str, Any]] = lambda x: x,
+        model: Type = None,
+        get_fields_function: Callable[
+            [Type], Dict[str, Any]
+        ] = lambda x: convert_class_to_dict(x),
         field_converter_function: Callable[
             [str, Any, RegistryGlobal], GRAPHENE_TYPE
         ] = lambda x, y, z: graphene.String(),

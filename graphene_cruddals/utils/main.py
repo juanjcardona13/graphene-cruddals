@@ -385,7 +385,7 @@ def get_name_of_model_in_different_case(
 
 
 def exists_conversion_for_model(
-    model: Dict[str, Any],
+    model: Type,
     registry: RegistryGlobal,
     type_of_registry: TypeRegistryForModel,
 ) -> bool:
@@ -393,7 +393,7 @@ def exists_conversion_for_model(
     Check if there exists a conversion for the given model in the registry.
 
     Args:
-        model (Dict[str, Any]): The model to check for conversion.
+        model (Type): The model to check for conversion.
         registry (RegistryGlobal): The global registry containing the conversions.
         type_of_registry (TypeRegistryForModel): The type of registry to check for.
 
@@ -407,7 +407,7 @@ def exists_conversion_for_model(
 
 
 def get_converted_model(
-    model: Dict[str, Any],
+    model: Type,
     registry: RegistryGlobal,
     type_of_registry: TypeRegistryForModel,
 ):
@@ -415,7 +415,7 @@ def get_converted_model(
     Get the converted model for a given registry and type.
 
     Args:
-        model (Dict[str, Any]): The model to get the converted version of.
+        model (Type): The model to get the converted version of.
         registry (RegistryGlobal): The global registry containing the converted models.
         type_of_registry (TypeRegistryForModel): The type of registry to retrieve the converted model from.
 

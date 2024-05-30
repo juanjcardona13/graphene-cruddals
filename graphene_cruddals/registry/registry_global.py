@@ -13,7 +13,7 @@ class RegistryGlobal:
     It stores registries in a hashable format to ensure uniqueness and provide easy access.
 
     Attributes:
-        _model_registry (Dict[str, Any]): A dictionary that stores the registered models.
+        _model_registry (Dict[Type, Any]): A dictionary that stores the registered models.
         _field_registry (Dict[str, Any]): A dictionary that stores the registered fields.
     """
 
@@ -31,7 +31,7 @@ class RegistryGlobal:
         Registers a model with a specific class under a given type registry.
 
         Args:
-            model (Dict[str, Any]): The model to be registered.
+            model (Type): The model to be registered.
             type_to_registry (TypeRegistryForModel): The type of registry for the model.
             value: (Any): The value to associate with the model.
 
@@ -46,7 +46,7 @@ class RegistryGlobal:
         Retrieves the registry for a specific model.
 
         Args:
-            model (Dict[str, Any]): The model to retrieve the registry for.
+            model (Type): The model to retrieve the registry for.
 
         Returns:
             dict: The registry for the specified model.

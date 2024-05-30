@@ -57,29 +57,29 @@ Si, el usuario debe de conocer esta dataclass:
 ```python
   @dataclass
   class CruddalsBuilderConfig:
-      model: Dict[str, Any]
+      model: Type
       pascal_case_name: str
 
-      get_fields_for_output: Callable[[Dict[str, Any]], Dict[str, Any]]
+      get_fields_for_output: Callable[[Type], Dict[str, Any]]
       output_field_converter_function: Callable[[str, Any, RegistryGlobal], GRAPHENE_TYPE]
 
-      get_fields_for_input: Callable[[Dict[str, Any]], Dict[str, Any]]
+      get_fields_for_input: Callable[[Type], Dict[str, Any]]
       input_field_converter_function: Callable[[str, Any, RegistryGlobal], GRAPHENE_TYPE]
 
-      get_fields_for_create_input: Callable[[Dict[str, Any]], Dict[str, Any]]
+      get_fields_for_create_input: Callable[[Type], Dict[str, Any]]
       create_input_field_converter_function: Callable[
           [str, Any, RegistryGlobal], GRAPHENE_TYPE
       ]
 
-      get_fields_for_update_input: Callable[[Dict[str, Any]], Dict[str, Any]]
+      get_fields_for_update_input: Callable[[Type], Dict[str, Any]]
       update_input_field_converter_function: Callable[
           [str, Any, RegistryGlobal], GRAPHENE_TYPE
       ]
 
-      get_fields_for_filter: Callable[[Dict[str, Any]], Dict[str, Any]]
+      get_fields_for_filter: Callable[[Type], Dict[str, Any]]
       filter_field_converter_function: Callable[[str, Any, RegistryGlobal], GRAPHENE_TYPE]
 
-      get_fields_for_order_by: Callable[[Dict[str, Any]], Dict[str, Any]]
+      get_fields_for_order_by: Callable[[Type], Dict[str, Any]]
       order_by_field_converter_function: Callable[
           [str, Any, RegistryGlobal], GRAPHENE_TYPE
       ]

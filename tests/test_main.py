@@ -32,7 +32,15 @@ mock_database = [
     {"id": 3, "name": "test3", "active": True},
 ]
 
-mock_model = {"id": int, "name": str, "active": bool}
+
+class MockModel:
+    id: int
+    name: str
+    active: bool
+
+
+class Model:
+    id: int
 
 
 def mock_resolver_create_models(root, info, **kwargs):
@@ -680,8 +688,15 @@ def mock_converter_field_function(
     return graphene.String()
 
 
-def mock_get_fields(model):
-    return model
+def mock_get_fields(cls):
+    try:
+        return cls.__annotations__
+    except AttributeError:
+        return {
+            name: field
+            for name, field in cls.__dict__.items()
+            if not name.startswith("__") and not callable(field)
+        }
 
 
 dict_converters = {
@@ -711,11 +726,11 @@ dict_resolvers = {
 }
 
 mock_model_config_without_interfaces = CruddalsBuilderConfig(
-    model=mock_model, pascal_case_name="TestModel", **dict_converters, **dict_resolvers
+    model=MockModel, pascal_case_name="TestModel", **dict_converters, **dict_resolvers
 )
 
 mock_model_config_with_interfaceO11 = CruddalsBuilderConfig(
-    model=mock_model,
+    model=MockModel,
     pascal_case_name="TestModel",
     cruddals_interfaces=(InterfaceO11,),
     **dict_converters,
@@ -723,7 +738,7 @@ mock_model_config_with_interfaceO11 = CruddalsBuilderConfig(
 )
 
 mock_model_config_with_interfaceO12 = CruddalsBuilderConfig(
-    model=mock_model,
+    model=MockModel,
     pascal_case_name="TestModel",
     cruddals_interfaces=(InterfaceO12,),
     **dict_converters,
@@ -744,14 +759,18 @@ class TestCruddalsBuilderConfig:
 
     def test_requires_pascal_case_name(self):
         with pytest.raises(ValueError) as exc_info:
+
+            class A:
+                pass
+
             CruddalsBuilderConfig(
-                model={}, pascal_case_name="", **dict_converters, **dict_resolvers
+                model=A, pascal_case_name="", **dict_converters, **dict_resolvers
             )
         assert "pascal_case_name is required" in str(exc_info.value)
 
     def test_sets_plural_name_if_not_provided(self):
         config = CruddalsBuilderConfig(
-            model={"id": int},
+            model=Model,
             pascal_case_name="Model",
             **dict_converters,
             **dict_resolvers,
@@ -760,7 +779,7 @@ class TestCruddalsBuilderConfig:
 
     def test_sets_plural_name_if_provided(self):
         config = CruddalsBuilderConfig(
-            model={"id": int},
+            model=Model,
             pascal_case_name="Entity",
             plural_pascal_case_name="Entities",
             **dict_converters,
@@ -770,7 +789,7 @@ class TestCruddalsBuilderConfig:
 
     def test_sets_prefix(self):
         config = CruddalsBuilderConfig(
-            model={"id": int},
+            model=Model,
             pascal_case_name="Entity",
             prefix="test",
             **dict_converters,
@@ -780,7 +799,7 @@ class TestCruddalsBuilderConfig:
 
     def test_sets_suffix(self):
         config = CruddalsBuilderConfig(
-            model={"id": int},
+            model=Model,
             pascal_case_name="Entity",
             suffix="test",
             **dict_converters,
@@ -918,7 +937,7 @@ class TestBuilderCruddalsModel:
     def test_init(self):
         builder = BuilderCruddalsModel(mock_model_config_without_interfaces)
 
-        assert builder.model == mock_model
+        assert builder.model == MockModel
         assert builder.prefix == ""
         assert builder.suffix == ""
         expected_plural_name = "TestModels"

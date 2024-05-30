@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from typing import Any, Callable, Dict, Literal, Union
+from typing import Any, Callable, Dict, Literal, Type, Union
 
 import graphene
 from graphene.types.generic import GenericScalar
@@ -16,7 +16,7 @@ from graphene_cruddals.utils.typing.custom_typing import (
 
 
 def get_object_type_payload(
-    model: Dict[str, Any],
+    model: Type,
     registry: RegistryGlobal,
     name_for_output_type: str,
     plural_model_name: str,
@@ -66,7 +66,7 @@ class ModelCreateUpdateField(graphene.Field):
         self,
         plural_model_name: str,
         type_operation: Literal["Create", "Update"],
-        model: Dict[str, Any],
+        model: Type,
         registry: RegistryGlobal,
         resolver: Union[Callable[..., Any], None] = None,
         **extra_args,
@@ -118,7 +118,7 @@ class ModelReadField(graphene.Field):
     def __init__(
         self,
         singular_model_name: str,
-        model: Dict[str, Any],
+        model: Type,
         registry: RegistryGlobal,
         resolver: Union[Callable[..., Any], None] = None,
         **extra_args,
@@ -162,7 +162,7 @@ class ModelDeleteField(graphene.Field):
     def __init__(
         self,
         plural_model_name: str,
-        model: Dict[str, Any],
+        model: Type,
         registry: RegistryGlobal,
         resolver: Union[Callable[..., Any], None] = None,
         **extra_args,
@@ -212,7 +212,7 @@ class ModelDeactivateField(graphene.Field):
     def __init__(
         self,
         plural_model_name: str,
-        model: Dict[str, Any],
+        model: Type,
         registry: RegistryGlobal,
         state_controller_field: Union[str, None] = None,
         resolver: Union[Callable[..., Any], None] = None,
@@ -262,7 +262,7 @@ class ModelActivateField(graphene.Field):
     def __init__(
         self,
         plural_model_name: str,
-        model: Dict[str, Any],
+        model: Type,
         registry: RegistryGlobal,
         state_controller_field: Union[str, None] = None,
         resolver: Union[Callable[..., Any], None] = None,
@@ -312,7 +312,7 @@ class ModelListField(graphene.Field):
     def __init__(
         self,
         plural_model_name: str,
-        model: Dict[str, Any],
+        model: Type,
         registry: RegistryGlobal,
         resolver: Union[Callable[..., Any], None] = None,
         **extra_args,
@@ -342,7 +342,7 @@ class ModelSearchField(graphene.Field):
     def __init__(
         self,
         plural_model_name: str,
-        model: Dict[str, Any],
+        model: Type,
         registry: RegistryGlobal,
         resolver: Union[Callable[..., Any], None] = None,
         **extra_args,

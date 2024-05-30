@@ -17,12 +17,24 @@ mock_field_converter_function = Mock(return_value="GRAPHENE_FIELD")
 mock_registry = Mock()
 
 
-model = {"field1": int, "field2": str, "field3": float}
+class Model:
+    field1: int
+    field2: str
+    field3: float
+
+
 meta_attrs = {"exclude": ["field3"], "only": ["field1"]}
 
 
-def get_fields(model):
-    return model
+def get_fields(cls):
+    try:
+        return cls.__annotations__
+    except AttributeError:
+        return {
+            name: field
+            for name, field in cls.__dict__.items()
+            if not name.startswith("__") and not callable(field)
+        }
 
 
 @pytest.fixture
@@ -34,7 +46,7 @@ def setup_registry():
 
 def test_convert_model_to_model_object_type(setup_registry):
     result = convert_model_to_model_object_type(
-        model, "Test", setup_registry, get_fields, mock_field_converter_function
+        Model, "Test", setup_registry, get_fields, mock_field_converter_function
     )
     assert isinstance(result, type)
     assert issubclass(result, ObjectType)
@@ -51,7 +63,7 @@ def test_convert_model_to_model_object_type_without_model(setup_registry):
 def test_convert_model_to_model_object_type_without_name(setup_registry):
     with pytest.raises(ValueError) as exc_info:
         convert_model_to_model_object_type(
-            model, None, setup_registry, get_fields, mock_field_converter_function
+            Model, None, setup_registry, get_fields, mock_field_converter_function
         )
     assert str(exc_info.value) == "Name is empty in convert_model_to_model_object_type"
 
@@ -61,7 +73,7 @@ def test_convert_model_to_model_object_type_without_field_converter_function(
 ):
     with pytest.raises(ValueError) as exc_info:
         convert_model_to_model_object_type(
-            model, "Test", setup_registry, get_fields, None
+            Model, "Test", setup_registry, get_fields, None
         )
     assert (
         str(exc_info.value)
@@ -74,7 +86,7 @@ def test_convert_model_to_model_object_type_with_field_converter_function_not_ca
 ):
     with pytest.raises(ValueError) as exc_info:
         convert_model_to_model_object_type(
-            model, "Test", setup_registry, get_fields, "not_callable"
+            Model, "Test", setup_registry, get_fields, "not_callable"
         )
     assert (
         str(exc_info.value)
@@ -84,7 +96,7 @@ def test_convert_model_to_model_object_type_with_field_converter_function_not_ca
 
 def test_convert_model_to_model_object_type_without_registry(setup_registry):
     result = convert_model_to_model_object_type(
-        model, "Test", None, get_fields, mock_field_converter_function
+        Model, "Test", None, get_fields, mock_field_converter_function
     )
     assert isinstance(result, type)
     assert issubclass(result, ObjectType)
@@ -92,15 +104,10 @@ def test_convert_model_to_model_object_type_without_registry(setup_registry):
 
 
 def test_convert_model_to_model_paginated_object_type(setup_registry):
-    model = {
-        "field1": int,
-        "field2": str,
-        "field3": bool,
-    }
     pascal_case_name = "TestModel"
     registry = mock_registry
     model_object_type = convert_model_to_model_object_type(
-        model, "TestModel", registry, get_fields, mock_field_converter_function
+        Model, "TestModel", registry, get_fields, mock_field_converter_function
     )
     extra_fields = {
         "extra_field1": int,
@@ -108,7 +115,7 @@ def test_convert_model_to_model_paginated_object_type(setup_registry):
     }
 
     pagination_object_type = convert_model_to_model_paginated_object_type(
-        model, pascal_case_name, registry, model_object_type, extra_fields
+        Model, pascal_case_name, registry, model_object_type, extra_fields
     )
 
     assert issubclass(pagination_object_type, ObjectType)
@@ -127,14 +134,9 @@ def test_convert_model_to_model_paginated_object_type_without_model(setup_regist
 
 
 def test_convert_model_to_model_paginated_object_type_without_registry(setup_registry):
-    model = {
-        "field1": int,
-        "field2": str,
-        "field3": bool,
-    }
     pascal_case_name = "TestModel"
     model_object_type = convert_model_to_model_object_type(
-        model, "TestModel", None, get_fields, mock_field_converter_function
+        Model, "TestModel", None, get_fields, mock_field_converter_function
     )
     extra_fields = {
         "extra_field1": int,
@@ -142,7 +144,7 @@ def test_convert_model_to_model_paginated_object_type_without_registry(setup_reg
     }
 
     pagination_object_type = convert_model_to_model_paginated_object_type(
-        model, pascal_case_name, None, model_object_type, extra_fields
+        Model, pascal_case_name, None, model_object_type, extra_fields
     )
 
     assert issubclass(pagination_object_type, ObjectType)
@@ -152,14 +154,9 @@ def test_convert_model_to_model_paginated_object_type_without_registry(setup_reg
 def test_convert_model_to_model_paginated_object_type_without_pascal_case_name(
     setup_registry
 ):
-    model = {
-        "field1": int,
-        "field2": str,
-        "field3": bool,
-    }
     registry = mock_registry
     model_object_type = convert_model_to_model_object_type(
-        model, "TestModel", registry, get_fields, mock_field_converter_function
+        Model, "TestModel", registry, get_fields, mock_field_converter_function
     )
     extra_fields = {
         "extra_field1": int,
@@ -168,7 +165,7 @@ def test_convert_model_to_model_paginated_object_type_without_pascal_case_name(
 
     with pytest.raises(ValueError) as exc_info:
         convert_model_to_model_paginated_object_type(
-            model, None, registry, model_object_type, extra_fields
+            Model, None, registry, model_object_type, extra_fields
         )
     assert (
         str(exc_info.value)
@@ -179,11 +176,6 @@ def test_convert_model_to_model_paginated_object_type_without_pascal_case_name(
 def test_convert_model_to_model_paginated_object_type_without_model_object_type(
     setup_registry
 ):
-    model = {
-        "field1": int,
-        "field2": str,
-        "field3": bool,
-    }
     pascal_case_name = "TestModel"
     registry = mock_registry
     extra_fields = {
@@ -193,7 +185,7 @@ def test_convert_model_to_model_paginated_object_type_without_model_object_type(
 
     with pytest.raises(ValueError) as exc_info:
         convert_model_to_model_paginated_object_type(
-            model, pascal_case_name, registry, None, extra_fields
+            Model, pascal_case_name, registry, None, extra_fields
         )
     assert (
         str(exc_info.value)
@@ -202,11 +194,10 @@ def test_convert_model_to_model_paginated_object_type_without_model_object_type(
 
 
 def test_convert_model_to_model_mutate_input_object_type(setup_registry):
-    model = {
-        "id": int,
-        "name": str,
-        "age": int,
-    }
+    class Model2:
+        id: int
+        name: str
+        age: int
 
     pascal_case_name = "Person"
     registry = mock_registry
@@ -217,12 +208,9 @@ def test_convert_model_to_model_mutate_input_object_type(setup_registry):
         else:
             return graphene.Int()
 
-    def get_fields(model):
-        return model
-
     # Call the function to convert the model to InputObjectType
     input_object_type = convert_model_to_model_mutate_input_object_type(
-        model=model,
+        model=Model2,
         pascal_case_name=pascal_case_name,
         registry=registry,
         get_fields_function=get_fields,
@@ -259,7 +247,7 @@ def test_convert_model_to_model_mutate_input_object_type_without_pascal_case_nam
 ):
     with pytest.raises(ValueError) as exc_info:
         convert_model_to_model_mutate_input_object_type(
-            model=model,
+            model=Model,
             pascal_case_name=None,
             registry=mock_registry,
             get_fields_function=get_fields,
@@ -278,7 +266,7 @@ def test_convert_model_to_model_mutate_input_object_type_without_registry(
     setup_registry
 ):
     input_object_type = convert_model_to_model_mutate_input_object_type(
-        model=model,
+        model=Model,
         pascal_case_name="Person",
         registry=None,
         get_fields_function=get_fields,
@@ -295,7 +283,7 @@ def test_convert_model_to_model_mutate_input_object_type_without_field_converter
 ):
     with pytest.raises(ValueError) as exc_info:
         convert_model_to_model_mutate_input_object_type(
-            model=model,
+            model=Model,
             pascal_case_name="Person",
             registry=mock_registry,
             get_fields_function=get_fields,
@@ -315,7 +303,7 @@ def test_convert_model_to_model_mutate_input_object_type_with_field_converter_fu
 ):
     with pytest.raises(ValueError) as exc_info:
         convert_model_to_model_mutate_input_object_type(
-            model=model,
+            model=Model,
             pascal_case_name="Person",
             registry=mock_registry,
             get_fields_function=get_fields,
@@ -331,11 +319,10 @@ def test_convert_model_to_model_mutate_input_object_type_with_field_converter_fu
 
 
 def test_convert_model_to_model_filter_input_object_type(setup_registry):
-    model = {
-        "id": int,
-        "name": str,
-        "age": int,
-    }
+    class Model2:
+        id: int
+        name: str
+        age: int
 
     pascal_case_name = "Person"
     registry = mock_registry
@@ -346,14 +333,11 @@ def test_convert_model_to_model_filter_input_object_type(setup_registry):
         else:
             return graphene.Int()
 
-    def get_fields(model):
-        return model
-
     meta_attrs = None
     extra_fields = None
 
     filter_input_object_type = convert_model_to_model_filter_input_object_type(
-        model,
+        Model2,
         pascal_case_name,
         registry,
         get_fields,
@@ -380,12 +364,10 @@ def test_convert_model_to_model_filter_input_object_type(setup_registry):
 
 
 def test_convert_model_to_model_order_by_input_object_type(setup_registry):
-    # Define a sample model
-    model = {
-        "id": int,
-        "name": str,
-        "age": int,
-    }
+    class Model2:
+        id: int
+        name: str
+        age: int
 
     # Define other required parameters
     pascal_case_name = "Person"
@@ -397,15 +379,12 @@ def test_convert_model_to_model_order_by_input_object_type(setup_registry):
         else:
             return graphene.Int()
 
-    def get_fields(model):
-        return model
-
     meta_attrs = None
     extra_fields = None
 
     # Convert the model to an order_by InputObjectType
     order_by_input_object_type = convert_model_to_model_order_by_input_object_type(
-        model,
+        Model2,
         pascal_case_name,
         registry,
         get_fields,

@@ -34,10 +34,10 @@ from graphene_cruddals.utils.typing.custom_typing import (
 
 
 def convert_model_to_model_object_type(
-    model: Dict[str, Any],
+    model: Type,
     pascal_case_name: str,
     registry: RegistryGlobal,
-    get_fields_function: Callable[[Dict[str, Any]], Dict[str, Any]],
+    get_fields_function: Callable[[Type], Dict[str, Any]],
     field_converter_function: Callable[[str, Any, RegistryGlobal], GRAPHENE_TYPE],
     meta_attrs: Union[OrderedDict[str, Any], MetaAttrs, None] = None,
     extra_fields: Union[Dict[str, GRAPHENE_TYPE], None] = None,
@@ -101,7 +101,7 @@ def convert_model_to_model_object_type(
 
 
 def convert_model_to_model_paginated_object_type(
-    model: Dict[str, Any],
+    model: Type,
     pascal_case_name: str,
     registry: RegistryGlobal,
     model_object_type: Type[graphene.ObjectType],
@@ -161,10 +161,10 @@ def convert_model_to_model_paginated_object_type(
 
 
 def convert_model_to_model_mutate_input_object_type(
-    model: Dict[str, Any],
+    model: Type,
     pascal_case_name: str,
     registry: RegistryGlobal,
-    get_fields_function: Callable[[Dict[str, Any]], Dict[str, Any]],
+    get_fields_function: Callable[[Type], Dict[str, Any]],
     field_converter_function: Callable[[str, Any, RegistryGlobal], GRAPHENE_TYPE],
     type_mutation: TypesMutation = TypesMutationEnum.CREATE_UPDATE.value,
     meta_attrs: Union[OrderedDict[str, Any], MetaAttrs, None] = None,
@@ -246,10 +246,10 @@ def convert_model_to_model_mutate_input_object_type(
 
 
 def convert_model_to_model_filter_input_object_type(
-    model: Dict[str, Any],
+    model: Type,
     pascal_case_name: str,
     registry: RegistryGlobal,
-    get_fields_function: Callable[[Dict[str, Any]], Dict[str, Any]],
+    get_fields_function: Callable[[Type], Dict[str, Any]],
     field_converter_function: Callable[[str, Any, RegistryGlobal], GRAPHENE_TYPE],
     meta_attrs: Union[OrderedDict[str, Any], MetaAttrs, None] = None,
     extra_fields: Union[Dict[str, GRAPHENE_TYPE], None] = None,
@@ -317,10 +317,10 @@ def convert_model_to_model_filter_input_object_type(
 
 
 def convert_model_to_model_order_by_input_object_type(
-    model: Dict[str, Any],
+    model: Type,
     pascal_case_name: str,
     registry: RegistryGlobal,
-    get_fields_function: Callable[[Dict[str, Any]], Dict[str, Any]],
+    get_fields_function: Callable[[Type], Dict[str, Any]],
     field_converter_function: Callable[[str, Any, RegistryGlobal], GRAPHENE_TYPE],
     meta_attrs: Union[OrderedDict[str, Any], MetaAttrs, None] = None,
     extra_fields: Union[Dict[str, GRAPHENE_TYPE], None] = None,
