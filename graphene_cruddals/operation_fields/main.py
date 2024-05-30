@@ -39,9 +39,7 @@ def get_object_type_payload(
     )
     output_fields: Dict[str, Union[ModelListField, graphene.Field]] = OrderedDict(
         {
-            "objects": graphene.Field(
-                graphene.List(model_object_type)
-            ),  # TODa: If I want that the name of the field is the plural_model_name, I need to change the name of the field to plural_model_name, Missing check impact
+            "objects": graphene.Field(graphene.List(model_object_type)),
             "errors_report": graphene.Field(graphene.List(ErrorCollectionType)),
         }
     )
@@ -325,7 +323,6 @@ class ModelListField(graphene.Field):
         name = (
             f"list{plural_model_name}" if plural_model_name != "objects" else "objects"
         )
-        # TODa: Check if is List(NonNull(ModelObjectType)) or List(ModelObjectType)
         super().__init__(
             graphene.List(graphene.NonNull(model_object_type)),
             name=name,

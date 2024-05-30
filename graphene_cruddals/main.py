@@ -309,9 +309,7 @@ class BaseCruddals:
                 root, info, kw = pre_resolver(root, info, **kw)
             response = default_resolver(root, info, **kw)
             for post_resolver in post_resolves:
-                kw["CRUDDALS_RESPONSE"] = (
-                    response  # TODa: Check if leave in kw, info, or new argument
-                )
+                kw["CRUDDALS_RESPONSE"] = response
                 response = post_resolver(root, info, **kw)
             return response
 
