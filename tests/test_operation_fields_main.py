@@ -749,7 +749,6 @@ class TestModelListField:
         assert isinstance(payload_type, graphene.List)  # type: ignore
         assert isinstance(payload_type.of_type, graphene.NonNull)
         assert payload_type.of_type.of_type == MockModelOperationFieldsObjectType
-        print("====")
 
     def test_wrap_resolve_with_resolver(self, registry):
         # Setup: Create an instance of ModelListField with a mock resolver

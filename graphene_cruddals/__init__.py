@@ -5,6 +5,7 @@ from .main import (
     CruddalsModel,
 )
 from .operation_fields.main import (
+    CruddalsRelationField,
     IntOrAll,
     ModelActivateField,
     ModelCreateUpdateField,
@@ -159,6 +160,7 @@ __all__ = [
     "IntOrAll",
     "PaginationConfigInput",
     "PaginationInterface",
+    "CruddalsRelationField",
     "ModelCreateUpdateField",
     "ModelReadField",
     "ModelDeleteField",

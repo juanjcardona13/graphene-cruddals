@@ -677,7 +677,7 @@ class Interface64:
 
 
 def mock_converter_field_function(
-    name: str, field, registry: RegistryGlobal
+    name: str, field, model, registry: RegistryGlobal
 ) -> GRAPHENE_TYPE:
     if field == int:
         return graphene.Int()

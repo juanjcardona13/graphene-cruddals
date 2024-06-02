@@ -202,7 +202,7 @@ def test_convert_model_to_model_mutate_input_object_type(setup_registry):
     pascal_case_name = "Person"
     registry = mock_registry
 
-    def field_converter_function(name, field_type, registry):
+    def field_converter_function(name, field_type, model, registry):
         if field_type == str:
             return graphene.String()
         else:
@@ -327,7 +327,7 @@ def test_convert_model_to_model_filter_input_object_type(setup_registry):
     pascal_case_name = "Person"
     registry = mock_registry
 
-    def field_converter_function(name, field_type, registry):
+    def field_converter_function(name, field_type, model, registry):
         if field_type == str:
             return graphene.String()
         else:
@@ -373,7 +373,7 @@ def test_convert_model_to_model_order_by_input_object_type(setup_registry):
     pascal_case_name = "Person"
     registry = mock_registry
 
-    def field_converter_function(name, field_type, registry):
+    def field_converter_function(name, field_type, model, registry):
         if field_type == str:
             return graphene.String()
         else:

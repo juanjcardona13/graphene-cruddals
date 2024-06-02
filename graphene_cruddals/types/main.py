@@ -37,14 +37,19 @@ class PaginationInterface(graphene.Interface):
 def construct_fields(
     model: Type,
     get_fields_function: Callable[[Type], Dict[str, Any]],
-    field_converter_function: Callable[[str, Any, RegistryGlobal], GRAPHENE_TYPE],
+    field_converter_function: Callable[
+        [str, Any, Type[Any], RegistryGlobal], GRAPHENE_TYPE
+    ],
     registry: RegistryGlobal,
     only_fields: Union[List[str], Literal["__all__"], None] = None,
     exclude_fields: Union[List[str], None] = None,
+    extra_fields: Union[Dict[str, Union[GRAPHENE_TYPE, Any]], None] = None,
     type_of_registry: TypeRegistryForField = TypeRegistryForFieldEnum.OUTPUT.value,
-):
+) -> Dict[str, GRAPHENE_TYPE]:
     fields = OrderedDict()
     final_fields = get_fields_function(model)
+    if extra_fields:
+        final_fields.update(extra_fields)
     for name, field in final_fields.items():
         is_not_in_only = (
             only_fields is not None
@@ -55,9 +60,15 @@ def construct_fields(
         if is_not_in_only or is_excluded:
             continue
 
-        converted = field_converter_function(name, field, registry)
-        fields[name] = converted
-        registry.register_field(field, type_of_registry, converted)
+        if name.startswith("resolve_"):
+            continue
+        elif isinstance(field, graphene.Scalar):
+            fields[name] = field
+            # registry.register_field(field, type_of_registry, field) #TODO: Revisar como guardo esta conversion
+        else:
+            converted = field_converter_function(name, field, model, registry)
+            fields[name] = converted
+            registry.register_field(field, type_of_registry, converted)
 
     return fields
 
@@ -88,14 +99,13 @@ class ModelObjectType(graphene.ObjectType):
         _meta: Union[ModelObjectTypeOptions, None] = None,
         model: Type = None,
         field_converter_function: Callable[
-            [str, Any, RegistryGlobal], GRAPHENE_TYPE
-        ] = lambda x, y, z: graphene.String(),
-        get_fields_function: Callable[
-            [Type], Dict[str, Any]
-        ] = lambda x: convert_class_to_dict(x),
+            [str, Any, Type[Any], RegistryGlobal], GRAPHENE_TYPE
+        ] = lambda w, x, y, z: graphene.String(),
+        get_fields_function: Callable[[Type], Dict[str, Any]] = convert_class_to_dict,
         registry: Union[RegistryGlobal, None] = None,
         only_fields: Union[List[str], Literal["__all__"], None] = None,
         exclude_fields: Union[List[str], None] = None,
+        extra_fields: Union[Dict[str, Union[GRAPHENE_TYPE, Any]], None] = None,
         **options,
     ):
         if not registry:
@@ -108,6 +118,7 @@ class ModelObjectType(graphene.ObjectType):
             registry,
             only_fields,
             exclude_fields,
+            extra_fields,
             TypeRegistryForFieldEnum.OUTPUT.value,
         )
 
@@ -183,15 +194,14 @@ class ModelInputObjectType(graphene.InputObjectType):
         _meta: Union[ModelObjectTypeOptions, None] = None,
         model: Type = None,
         type_mutation: TypesMutation = TypesMutationEnum.CREATE_UPDATE.value,
-        get_fields_function: Callable[
-            [Type], Dict[str, Any]
-        ] = lambda x: convert_class_to_dict(x),
+        get_fields_function: Callable[[Type], Dict[str, Any]] = convert_class_to_dict,
         field_converter_function: Callable[
-            [str, Any, RegistryGlobal], GRAPHENE_TYPE
-        ] = lambda x, y, z: graphene.String(),
+            [str, Any, Type[Any], RegistryGlobal], GRAPHENE_TYPE
+        ] = lambda w, x, y, z: graphene.String(),
         registry: Union[RegistryGlobal, None] = None,
         only_fields: Union[List[str], Literal["__all__"], None] = None,
         exclude_fields: Union[List[str], None] = None,
+        extra_fields: Union[Dict[str, Union[GRAPHENE_TYPE, Any]], None] = None,
         **options,
     ):
         class_name = cls.__name__
@@ -228,6 +238,7 @@ class ModelInputObjectType(graphene.InputObjectType):
             registry,
             only_fields,
             exclude_fields,
+            extra_fields,
             type_of_registry_for_field,
         )
 
@@ -250,15 +261,14 @@ class ModelSearchInputObjectType(graphene.InputObjectType):
         container=None,
         _meta: Union[ModelObjectTypeOptions, None] = None,
         model: Type = None,
-        get_fields_function: Callable[
-            [Type], Dict[str, Any]
-        ] = lambda x: convert_class_to_dict(x),
+        get_fields_function: Callable[[Type], Dict[str, Any]] = convert_class_to_dict,
         field_converter_function: Callable[
-            [str, Any, RegistryGlobal], GRAPHENE_TYPE
-        ] = lambda x, y, z: graphene.String(),
+            [str, Any, Type[Any], RegistryGlobal], GRAPHENE_TYPE
+        ] = lambda w, x, y, z: graphene.String(),
         registry: Union[RegistryGlobal, None] = None,
         only_fields: Union[List[str], Literal["__all__"], None] = None,
         exclude_fields: Union[List[str], None] = None,
+        extra_fields: Union[Dict[str, Union[GRAPHENE_TYPE, Any]], None] = None,
         **options,
     ):
         if not registry:
@@ -270,6 +280,7 @@ class ModelSearchInputObjectType(graphene.InputObjectType):
             registry,
             only_fields,
             exclude_fields,
+            extra_fields,
             TypeRegistryForFieldEnum.INPUT_FOR_SEARCH.value,
         )
         converted_fields.update(
@@ -295,15 +306,14 @@ class ModelOrderByInputObjectType(graphene.InputObjectType):
         container=None,
         _meta: Union[ModelObjectTypeOptions, None] = None,
         model: Type = None,
-        get_fields_function: Callable[
-            [Type], Dict[str, Any]
-        ] = lambda x: convert_class_to_dict(x),
+        get_fields_function: Callable[[Type], Dict[str, Any]] = convert_class_to_dict,
         field_converter_function: Callable[
-            [str, Any, RegistryGlobal], GRAPHENE_TYPE
-        ] = lambda x, y, z: graphene.String(),
+            [str, Any, Type[Any], RegistryGlobal], GRAPHENE_TYPE
+        ] = lambda w, x, y, z: graphene.String(),
         registry: Union[RegistryGlobal, None] = None,
         only_fields: Union[List[str], Literal["__all__"], None] = None,
         exclude_fields: Union[List[str], None] = None,
+        extra_fields: Union[Dict[str, Union[GRAPHENE_TYPE, Any]], None] = None,
         **options,
     ):
         if not registry:
@@ -315,6 +325,7 @@ class ModelOrderByInputObjectType(graphene.InputObjectType):
             registry,
             only_fields,
             exclude_fields,
+            extra_fields,
             TypeRegistryForFieldEnum.INPUT_FOR_ORDER_BY.value,
         )
         model_fields = yank_fields_from_attrs(converted_fields, _as=graphene.InputField)

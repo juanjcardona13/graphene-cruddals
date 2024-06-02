@@ -51,6 +51,10 @@ def get_object_type_payload(
     )
 
 
+class CruddalsRelationField:
+    """Mark to field for convert field to relation field"""
+
+
 class IntOrAll(GenericScalar):
     class Meta:
         description = "The page size can be int or 'All'"

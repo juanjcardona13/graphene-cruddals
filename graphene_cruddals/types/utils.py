@@ -33,12 +33,22 @@ from graphene_cruddals.utils.typing.custom_typing import (
 )
 
 
+def get_resolvers(dictionary):
+    return {
+        k: v
+        for k, v in dictionary.items()
+        if k.startswith("resolver_") or k.startswith("resolve_")
+    }
+
+
 def convert_model_to_model_object_type(
     model: Type,
     pascal_case_name: str,
     registry: RegistryGlobal,
     get_fields_function: Callable[[Type], Dict[str, Any]],
-    field_converter_function: Callable[[str, Any, RegistryGlobal], GRAPHENE_TYPE],
+    field_converter_function: Callable[
+        [str, Any, Type[Any], RegistryGlobal], GRAPHENE_TYPE
+    ],
     meta_attrs: Union[OrderedDict[str, Any], MetaAttrs, None] = None,
     extra_fields: Union[Dict[str, GRAPHENE_TYPE], None] = None,
 ) -> Type[ModelObjectType]:
@@ -73,7 +83,6 @@ def convert_model_to_model_object_type(
         raise ValueError(
             "Field converter function is not callable in convert_model_to_model_object_type"
         )
-
     if not extra_fields:
         extra_fields = {}
     if not meta_attrs:
@@ -86,6 +95,7 @@ def convert_model_to_model_object_type(
             "get_fields_function": get_fields_function,
             "field_converter_function": field_converter_function,
             "registry": registry,
+            "extra_fields": extra_fields,
             **meta_attrs,
         },
     )
@@ -137,8 +147,7 @@ def convert_model_to_model_paginated_object_type(
         raise ValueError(
             "Model object type is empty in convert_model_to_model_paginated_object_type"
         )
-
-    if extra_fields is None:
+    if not extra_fields:
         extra_fields = {}
 
     class_meta_paginated_type = build_class(
@@ -165,7 +174,9 @@ def convert_model_to_model_mutate_input_object_type(
     pascal_case_name: str,
     registry: RegistryGlobal,
     get_fields_function: Callable[[Type], Dict[str, Any]],
-    field_converter_function: Callable[[str, Any, RegistryGlobal], GRAPHENE_TYPE],
+    field_converter_function: Callable[
+        [str, Any, Type[Any], RegistryGlobal], GRAPHENE_TYPE
+    ],
     type_mutation: TypesMutation = TypesMutationEnum.CREATE_UPDATE.value,
     meta_attrs: Union[OrderedDict[str, Any], MetaAttrs, None] = None,
     extra_fields: Union[Dict[str, GRAPHENE_TYPE], None] = None,
@@ -217,7 +228,6 @@ def convert_model_to_model_mutate_input_object_type(
         raise ValueError(
             "Field converter function is not callable in convert_model_to_model_mutate_input_object_type"
         )
-
     if not extra_fields:
         extra_fields = {}
     if not meta_attrs:
@@ -231,6 +241,7 @@ def convert_model_to_model_mutate_input_object_type(
             "field_converter_function": field_converter_function,
             "type_mutation": type_mutation,
             "registry": registry,
+            "extra_fields": extra_fields,
             **meta_attrs,
         },
     )
@@ -250,7 +261,9 @@ def convert_model_to_model_filter_input_object_type(
     pascal_case_name: str,
     registry: RegistryGlobal,
     get_fields_function: Callable[[Type], Dict[str, Any]],
-    field_converter_function: Callable[[str, Any, RegistryGlobal], GRAPHENE_TYPE],
+    field_converter_function: Callable[
+        [str, Any, Type[Any], RegistryGlobal], GRAPHENE_TYPE
+    ],
     meta_attrs: Union[OrderedDict[str, Any], MetaAttrs, None] = None,
     extra_fields: Union[Dict[str, GRAPHENE_TYPE], None] = None,
 ) -> Type[ModelSearchInputObjectType]:
@@ -289,7 +302,6 @@ def convert_model_to_model_filter_input_object_type(
         raise ValueError(
             "Field converter function is not callable in convert_model_to_model_filter_input_object_type"
         )
-
     if not extra_fields:
         extra_fields = {}
     if not meta_attrs:
@@ -302,6 +314,7 @@ def convert_model_to_model_filter_input_object_type(
             "get_fields_function": get_fields_function,
             "field_converter_function": field_converter_function,
             "registry": registry,
+            "extra_fields": extra_fields,
             **meta_attrs,
         },
     )
@@ -321,7 +334,9 @@ def convert_model_to_model_order_by_input_object_type(
     pascal_case_name: str,
     registry: RegistryGlobal,
     get_fields_function: Callable[[Type], Dict[str, Any]],
-    field_converter_function: Callable[[str, Any, RegistryGlobal], GRAPHENE_TYPE],
+    field_converter_function: Callable[
+        [str, Any, Type[Any], RegistryGlobal], GRAPHENE_TYPE
+    ],
     meta_attrs: Union[OrderedDict[str, Any], MetaAttrs, None] = None,
     extra_fields: Union[Dict[str, GRAPHENE_TYPE], None] = None,
 ) -> Type[ModelOrderByInputObjectType]:
@@ -362,7 +377,6 @@ def convert_model_to_model_order_by_input_object_type(
         raise ValueError(
             "Field converter function is not callable in convert_model_to_model_order_by_input_object_type"
         )
-
     if not extra_fields:
         extra_fields = {}
     if not meta_attrs:
@@ -375,6 +389,7 @@ def convert_model_to_model_order_by_input_object_type(
             "get_fields_function": get_fields_function,
             "field_converter_function": field_converter_function,
             "registry": registry,
+            "extra_fields": extra_fields,
             **meta_attrs,
         },
     )
