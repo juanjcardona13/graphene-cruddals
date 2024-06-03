@@ -21,14 +21,14 @@ class Promise:
     pass
 
 
-def build_class(name: str, bases: tuple = (), attrs: Union[dict, None] = None) -> Any:
+def build_class(name: str, bases: Tuple = (), attrs: Union[Dict, None] = None) -> Any:
     """
     Dynamically builds a class with the given name, bases, and attributes.
 
     Args:
         name (str): The name of the class.
         bases (tuple, optional): The base classes of the class. Defaults to ().
-        attrs (Union[dict, None], optional): The attributes of the class. Defaults to None.
+        attrs (Union[Dict, None], optional): The attributes of the class. Defaults to None.
 
     Returns:
         Any: The dynamically built class.
@@ -38,16 +38,16 @@ def build_class(name: str, bases: tuple = (), attrs: Union[dict, None] = None) -
     return type(name, bases, attrs)
 
 
-def delete_keys(obj: dict, keys: List[str]) -> dict:
+def delete_keys(obj: Dict, keys: List[str]) -> Dict:
     """
     Deletes the specified keys from the given dictionary.
 
     Args:
-        obj (dict): The dictionary from which keys will be deleted.
+        obj (Dict): The dictionary from which keys will be deleted.
         keys (List[str]): The list of keys to be deleted.
 
     Returns:
-        dict: The modified dictionary with the specified keys removed.
+        Dict: The modified dictionary with the specified keys removed.
     """
     for key in keys:
         if key in obj:
@@ -223,24 +223,24 @@ def transform_string(
 
 
 def merge_dict(
-    source: dict,
-    destination: dict,
+    source: Dict,
+    destination: Dict,
     overwrite: bool = False,
     keep_both: bool = False,
     path: Union[List[str], None] = None,
-) -> Union[dict, OrderedDict]:
+) -> Union[Dict, OrderedDict]:
     """
     Merge two dictionaries recursively.
 
     Args:
-        source (dict): The dictionary to merge from.
-        destination (dict): The dictionary to merge into.
+        source (Dict): The dictionary to merge from.
+        destination (Dict): The dictionary to merge into.
         overwrite (bool, optional): If True, overwrite values in destination with values from source. Defaults to False.
         keep_both (bool, optional): If True, keep both values from source and destination in case of conflicts. Defaults to False.
         path (Union[List[str], None], optional): The path to the current nested dictionary. Defaults to None.
 
     Returns:
-        Union[dict, OrderedDict]: The merged dictionary.
+        Union[Dict, OrderedDict]: The merged dictionary.
     """
     if path is None:
         path = []
@@ -263,8 +263,8 @@ def merge_dict(
 
 
 def merge_nested_dicts(
-    source: dict,
-    destination: dict,
+    source: Dict,
+    destination: Dict,
     key: str,
     overwrite: bool,
     keep_both: bool,
@@ -274,8 +274,8 @@ def merge_nested_dicts(
     Merge nested dictionaries by recursively merging their key-value pairs.
 
     Args:
-        source (dict): The source dictionary to merge.
-        destination (dict): The destination dictionary to merge into.
+        source (Dict): The source dictionary to merge.
+        destination (Dict): The destination dictionary to merge into.
         key (str): The key to merge.
         overwrite (bool): Flag indicating whether to overwrite the destination value with the source value if there is a conflict.
         keep_both (bool): Flag indicating whether to keep both values if there is a conflict.
