@@ -65,7 +65,7 @@ def construct_fields(
         elif isinstance(field, graphene.Scalar):
             fields[name] = field
             # registry.register_field(field, type_of_registry, field) #TODO: Revisar como guardo esta conversion
-        else:
+        elif not callable(field):
             converted = field_converter_function(name, field, model, registry)
             fields[name] = converted
             registry.register_field(field, type_of_registry, converted)

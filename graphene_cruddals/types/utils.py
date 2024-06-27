@@ -26,7 +26,6 @@ from graphene_cruddals.utils.main import (
 )
 from graphene_cruddals.utils.typing.custom_typing import (
     GRAPHENE_TYPE,
-    GRAPHENE_TYPE_TUPLE,
     MetaAttrs,
     TypeRegistryForModelEnum,
     TypesMutation,
@@ -84,16 +83,8 @@ def convert_model_to_model_object_type(
         raise ValueError(
             "Field converter function is not callable in convert_model_to_model_object_type"
         )
-    extra_attrs = {}
     if not extra_fields:
         extra_fields = {}
-    else:
-        for key, value in extra_fields.items():
-            if not isinstance(value, GRAPHENE_TYPE_TUPLE) and (
-                callable(value) and key.startswith("resolver_")
-            ):
-                extra_attrs.update({key: extra_fields.pop(key)})
-
     if not meta_attrs:
         meta_attrs = {"only_fields": "__all__", "exclude_fields": []}
 
@@ -113,7 +104,7 @@ def convert_model_to_model_object_type(
         bases=(ModelObjectType,),
         attrs={
             "Meta": class_meta_type,
-            **extra_attrs,
+            **extra_fields,
         },
     )
     return class_model_object_type
@@ -156,15 +147,8 @@ def convert_model_to_model_paginated_object_type(
         raise ValueError(
             "Model object type is empty in convert_model_to_model_paginated_object_type"
         )
-    extra_attrs = {}
     if not extra_fields:
         extra_fields = {}
-    else:
-        for key, value in extra_fields.items():
-            if not isinstance(value, GRAPHENE_TYPE_TUPLE) and (
-                callable(value) and key.startswith("resolver_")
-            ):
-                extra_attrs.update({key: extra_fields.pop(key)})
 
     class_meta_paginated_type = build_class(
         name="Meta",
@@ -179,7 +163,7 @@ def convert_model_to_model_paginated_object_type(
         bases=(ModelPaginatedObjectType,),
         attrs={
             "Meta": class_meta_paginated_type,
-            **extra_attrs,
+            **extra_fields,
         },
     )
     return class_model_paginated_object_type
@@ -244,16 +228,8 @@ def convert_model_to_model_mutate_input_object_type(
         raise ValueError(
             "Field converter function is not callable in convert_model_to_model_mutate_input_object_type"
         )
-    extra_attrs = {}
     if not extra_fields:
         extra_fields = {}
-    else:
-        for key, value in extra_fields.items():
-            if not isinstance(value, GRAPHENE_TYPE_TUPLE) and (
-                callable(value) and key.startswith("resolver_")
-            ):
-                extra_attrs.update({key: extra_fields.pop(key)})
-
     if not meta_attrs:
         meta_attrs = {"only_fields": "__all__", "exclude_fields": []}
 
@@ -274,7 +250,7 @@ def convert_model_to_model_mutate_input_object_type(
         bases=(ModelInputObjectType,),
         attrs={
             "Meta": class_meta_input_type,
-            **extra_attrs,
+            **extra_fields,
         },
     )
     return class_model_input_object_type
@@ -326,16 +302,8 @@ def convert_model_to_model_filter_input_object_type(
         raise ValueError(
             "Field converter function is not callable in convert_model_to_model_filter_input_object_type"
         )
-    extra_attrs = {}
     if not extra_fields:
         extra_fields = {}
-    else:
-        for key, value in extra_fields.items():
-            if not isinstance(value, GRAPHENE_TYPE_TUPLE) and (
-                callable(value) and key.startswith("resolver_")
-            ):
-                extra_attrs.update({key: extra_fields.pop(key)})
-
     if not meta_attrs:
         meta_attrs = {"only_fields": "__all__", "exclude_fields": []}
 
@@ -355,7 +323,7 @@ def convert_model_to_model_filter_input_object_type(
         bases=(ModelSearchInputObjectType,),
         attrs={
             "Meta": class_meta_search_type,
-            **extra_attrs,
+            **extra_fields,
         },
     )
     return class_model_filter_input_object_type
@@ -409,16 +377,8 @@ def convert_model_to_model_order_by_input_object_type(
         raise ValueError(
             "Field converter function is not callable in convert_model_to_model_order_by_input_object_type"
         )
-    extra_attrs = {}
     if not extra_fields:
         extra_fields = {}
-    else:
-        for key, value in extra_fields.items():
-            if not isinstance(value, GRAPHENE_TYPE_TUPLE) and (
-                callable(value) and key.startswith("resolver_")
-            ):
-                extra_attrs.update({key: extra_fields.pop(key)})
-
     if not meta_attrs:
         meta_attrs = {"only_fields": "__all__", "exclude_fields": []}
 
@@ -438,7 +398,7 @@ def convert_model_to_model_order_by_input_object_type(
         bases=(ModelOrderByInputObjectType,),
         attrs={
             "Meta": class_meta_order_by_type,
-            **extra_attrs,
+            **extra_fields,
         },
     )
     return class_model_order_by_input_object_type
