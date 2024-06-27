@@ -29,6 +29,32 @@ GRAPHENE_TYPE = Union[
     graphene.Union,
 ]
 
+GRAPHENE_TYPE_TUPLE = (
+    graphene.Scalar,
+    graphene.String,
+    graphene.ID,
+    graphene.Int,
+    graphene.Float,
+    graphene.Boolean,
+    graphene.Date,
+    graphene.DateTime,
+    graphene.Time,
+    graphene.Decimal,
+    graphene.JSONString,
+    graphene.UUID,
+    graphene.List,
+    graphene.NonNull,
+    graphene.Enum,
+    graphene.Argument,
+    graphene.Dynamic,
+    graphene.Field,
+    graphene.InputField,
+    graphene.Interface,
+    graphene.ObjectType,
+    graphene.InputObjectType,
+    graphene.Union,
+)
+
 
 class ModifyArgument(TypedDict):
     type_: Union[Any, None]
