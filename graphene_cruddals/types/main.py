@@ -2,8 +2,11 @@ from collections import OrderedDict
 from typing import Any, Callable, Dict, List, Literal, Tuple, Type, Union
 
 import graphene
+from graphene.types.base import BaseType as GrapheneBaseType
 from graphene.types.objecttype import ObjectTypeOptions
+from graphene.types.structures import Structure as GrapheneStructure
 from graphene.types.utils import yank_fields_from_attrs
+from graphene.utils.orderedtype import OrderedType as GrapheneOrderedType
 from graphene_cruddals.registry.registry_global import (
     RegistryGlobal,
     get_global_registry,
@@ -62,7 +65,12 @@ def construct_fields(
 
         if name.startswith("resolve_"):
             continue
-        elif isinstance(field, graphene.Scalar):
+        elif (
+            isinstance(field, graphene.Scalar)
+            or isinstance(field, GrapheneStructure)
+            or isinstance(field, GrapheneOrderedType)
+            or isinstance(field, GrapheneBaseType)
+        ):
             fields[name] = field
             # registry.register_field(field, type_of_registry, field) #TODO: Revisar como guardo esta conversion
         elif not name.startswith("get_objects"):
