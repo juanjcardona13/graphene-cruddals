@@ -30,7 +30,7 @@ setup(
     description="Library base for create others libraries with the objective of create a CRUD+DALS with GraphQL",
     long_description=open("README.md", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
-    url="https://github.com/juanjcardona13/graphene_cruddals",
+    url="https://github.com/juanjcardona13/graphene-cruddals",
     author="Juan J Cardona",
     author_email="juanjcardona13@gmail.com",
     license="Apache 2.0",
