@@ -244,9 +244,7 @@ class BaseCruddals:
             functions = [functions]
         return functions
 
-    def get_get_objects_functions(
-        self, get_objects_config: Any
-    ) -> List[Callable]:
+    def get_get_objects_functions(self, get_objects_config: Any) -> List[Callable]:
         """
         Retrieves a list of get_objects functions from configuration.
 

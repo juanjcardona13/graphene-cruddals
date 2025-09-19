@@ -158,8 +158,8 @@ class ModelObjectType(graphene.ObjectType):
         Process get_objects attribute and set up _get_objects_list if it's a list.
         """
         # Check if get_objects is defined and is a list
-        if hasattr(cls, '__dict__') and 'get_objects' in cls.__dict__:
-            get_objects_value = cls.__dict__['get_objects']
+        if hasattr(cls, "__dict__") and "get_objects" in cls.__dict__:
+            get_objects_value = cls.__dict__["get_objects"]
             if isinstance(get_objects_value, list):
                 # Store the list of functions
                 cls._get_objects_list = get_objects_value
@@ -177,7 +177,7 @@ class ModelObjectType(graphene.ObjectType):
         This method supports both single get_objects function and list of functions.
         """
         # Check if there's a _get_objects_list attribute (list of functions)
-        if hasattr(cls, '_get_objects_list') and cls._get_objects_list:
+        if hasattr(cls, "_get_objects_list") and cls._get_objects_list:
             # Apply each get_objects function in sequence
             result = objects
             for get_objects_func in cls._get_objects_list:
@@ -185,7 +185,7 @@ class ModelObjectType(graphene.ObjectType):
             return result
 
         # Fallback to single get_objects method
-        get_objects_method = getattr(cls, 'get_objects', None)
+        get_objects_method = getattr(cls, "get_objects", None)
         if get_objects_method is None:
             return objects
 
