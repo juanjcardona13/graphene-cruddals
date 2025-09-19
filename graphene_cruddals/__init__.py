@@ -89,7 +89,7 @@ from .utils.typing.custom_typing import (
     TypesMutationEnum,
 )
 
-__version__ = "0.2.11"
+__version__ = "0.2.13"
 
 __all__ = [
     "__version__",
