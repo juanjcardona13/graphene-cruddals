@@ -139,6 +139,9 @@ class ModelObjectType(graphene.ObjectType):
         _meta.registry = registry
         _meta.fields = model_fields
 
+        # Process get_objects as list if defined
+        cls._process_get_objects_list()
+
         super().__init_subclass_with_meta__(
             interfaces=interfaces,
             possible_types=possible_types,
@@ -150,8 +153,48 @@ class ModelObjectType(graphene.ObjectType):
         registry.register_model(model, "object_type", cls)
 
     @classmethod
+    def _process_get_objects_list(cls):
+        """
+        Process get_objects attribute and set up _get_objects_list if it's a list.
+        """
+        # Check if get_objects is defined and is a list
+        if hasattr(cls, '__dict__') and 'get_objects' in cls.__dict__:
+            get_objects_value = cls.__dict__['get_objects']
+            if isinstance(get_objects_value, list):
+                # Store the list of functions
+                cls._get_objects_list = get_objects_value
+                # Set the get_objects method to use get_objects_list
+                cls.get_objects = cls.get_objects_list
+
+    @classmethod
     def get_objects(cls, objects, info):
         return objects
+
+    @classmethod
+    def get_objects_list(cls, objects, info):
+        """
+        Default implementation for get_objects as a list.
+        This method supports both single get_objects function and list of functions.
+        """
+        # Check if there's a _get_objects_list attribute (list of functions)
+        if hasattr(cls, '_get_objects_list') and cls._get_objects_list:
+            # Apply each get_objects function in sequence
+            result = objects
+            for get_objects_func in cls._get_objects_list:
+                result = get_objects_func(result, info)
+            return result
+
+        # Fallback to single get_objects method
+        get_objects_method = getattr(cls, 'get_objects', None)
+        if get_objects_method is None:
+            return objects
+
+        # If it's the default get_objects method, just return objects
+        if get_objects_method == ModelObjectType.get_objects:
+            return objects
+
+        # Apply the get_objects method
+        return get_objects_method(objects, info)
 
 
 class ModelPaginatedObjectType(graphene.ObjectType):

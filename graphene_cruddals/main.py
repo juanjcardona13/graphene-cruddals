@@ -244,6 +244,44 @@ class BaseCruddals:
             functions = [functions]
         return functions
 
+    def get_get_objects_functions(
+        self, get_objects_config: Any
+    ) -> List[Callable]:
+        """
+        Retrieves a list of get_objects functions from configuration.
+
+        Parameters:
+            get_objects_config: Configuration that can be a single function or a list of functions.
+
+        Returns:
+            List[Callable]: A list of get_objects functions.
+        """
+        if get_objects_config is None:
+            return []
+        if not isinstance(get_objects_config, list):
+            return [get_objects_config]
+        return get_objects_config
+
+    @staticmethod
+    def apply_get_objects_functions(
+        get_objects_functions: List[Callable], objects: Any, info: Any
+    ) -> Any:
+        """
+        Applies a list of get_objects functions in sequence.
+
+        Parameters:
+            get_objects_functions: List of get_objects functions to apply.
+            objects: The objects to process.
+            info: GraphQL info object.
+
+        Returns:
+            Any: The processed objects after applying all get_objects functions.
+        """
+        result = objects
+        for get_objects_func in get_objects_functions:
+            result = get_objects_func(result, info)
+        return result
+
     def get_pre_and_post_resolves(
         self,
         extra_pre_post_resolvers: Dict[str, Any],
