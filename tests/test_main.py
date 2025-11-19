@@ -679,11 +679,11 @@ class Interface64:
 def mock_converter_field_function(
     name: str, field, model, registry: RegistryGlobal
 ) -> GRAPHENE_TYPE:
-    if field == int:
+    if field is int:
         return graphene.Int()
-    elif field == str:
+    elif field is str:
         return graphene.String()
-    elif field == bool:
+    elif field is bool:
         return graphene.Boolean()
     return graphene.String()
 
@@ -836,7 +836,7 @@ class TestBaseCruddals:
         assert functions == [extra_pre_post_resolvers["pre_resolver"]]
 
     def test_get_function_lists_with_multiple_functions_in_extra_pre_post_resolvers(
-        self
+        self,
     ):
         base_cruddals = BaseCruddals()
         extra_pre_post_resolvers = {"pre_mutate": [lambda: None, lambda: None]}

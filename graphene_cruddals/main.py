@@ -496,9 +496,9 @@ class BuilderCruddalsModel(BaseCruddals):
                 exclude = props.get(
                     "exclude", props.get("exclude_fields", props.get("exclude", []))
                 )
-                assert not (
-                    fields and exclude
-                ), f"Cannot set both 'fields' and 'exclude' options on Type {self.model_name_in_different_case['pascal_case']}."
+                assert not (fields and exclude), (
+                    f"Cannot set both 'fields' and 'exclude' options on Type {self.model_name_in_different_case['pascal_case']}."
+                )
                 return props
         return {}
 
@@ -536,15 +536,15 @@ class BuilderCruddalsModel(BaseCruddals):
         model_function = attrs.get(f"{name_function}", None)
         model_override_function = attrs.get(f"override_total_{name_function}", None)
         model_post = attrs.get(f"post_{name_function}", None)
-        assert not (
-            model_pre and model_override_function
-        ), f"Cannot set both 'pre_{name_function}' and 'override_total_{name_function}' options on {operation_name} {class_name}."
-        assert not (
-            model_function and model_override_function
-        ), f"Cannot set both '{name_function}' and 'override_total_{name_function}' options on {operation_name} {class_name}."
-        assert not (
-            model_post and model_override_function
-        ), f"Cannot set both 'post_{name_function}' and 'override_total_{name_function}' options on {operation_name} {class_name}."
+        assert not (model_pre and model_override_function), (
+            f"Cannot set both 'pre_{name_function}' and 'override_total_{name_function}' options on {operation_name} {class_name}."
+        )
+        assert not (model_function and model_override_function), (
+            f"Cannot set both '{name_function}' and 'override_total_{name_function}' options on {operation_name} {class_name}."
+        )
+        assert not (model_post and model_override_function), (
+            f"Cannot set both 'post_{name_function}' and 'override_total_{name_function}' options on {operation_name} {class_name}."
+        )
 
     def get_dict_of_internal_interface_attr(
         self,
@@ -594,15 +594,15 @@ class BuilderCruddalsModel(BaseCruddals):
                         operation_name=internal_interface_field_name,
                     )
 
-                dict_of_internal_interface_attr[
-                    internal_interface_field_name
-                ] = OrderedDict(
-                    merge_dict(
-                        destination=dict_of_internal_interface_attr[
-                            internal_interface_field_name
-                        ],
-                        source=internal_interface_attrs,
-                        keep_both=True,
+                dict_of_internal_interface_attr[internal_interface_field_name] = (
+                    OrderedDict(
+                        merge_dict(
+                            destination=dict_of_internal_interface_attr[
+                                internal_interface_field_name
+                            ],
+                            source=internal_interface_attrs,
+                            keep_both=True,
+                        )
                     )
                 )
 
@@ -618,9 +618,9 @@ class BuilderCruddalsModel(BaseCruddals):
                     interface_meta_attrs = self.get_internal_interface_meta_attrs(
                         current_internal_interface
                     )
-                    literal_meta_type: (
-                        ListInternalInterfaceMetaClassNames
-                    ) = f"Meta{internal_interface_type_name}"  # type: ignore
+                    literal_meta_type: ListInternalInterfaceMetaClassNames = (
+                        f"Meta{internal_interface_type_name}"  # type: ignore
+                    )
                     dict_of_internal_interface_attr[literal_meta_type] = OrderedDict(
                         merge_dict(
                             destination=dict_of_internal_interface_attr[
@@ -630,15 +630,15 @@ class BuilderCruddalsModel(BaseCruddals):
                             keep_both=True,
                         )
                     )
-                dict_of_internal_interface_attr[
-                    internal_interface_type_name
-                ] = OrderedDict(
-                    merge_dict(
-                        destination=dict_of_internal_interface_attr[
-                            internal_interface_type_name
-                        ],
-                        source=internal_interface_attrs,
-                        keep_both=True,
+                dict_of_internal_interface_attr[internal_interface_type_name] = (
+                    OrderedDict(
+                        merge_dict(
+                            destination=dict_of_internal_interface_attr[
+                                internal_interface_type_name
+                            ],
+                            source=internal_interface_attrs,
+                            keep_both=True,
+                        )
                     )
                 )
 

@@ -14,8 +14,8 @@ tests:
 
 .PHONY: format ## Format code
 format:
-	ruff format graphene_cruddals tests setup.py
+	pre-commit run ruff-format --all-files
 
 .PHONY: lint ## Lint code
 lint:
-	ruff graphene_cruddals tests
+	pre-commit run ruff --all-files

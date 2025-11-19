@@ -300,7 +300,7 @@ def merge_nested_dicts(
         elif overwrite:
             return destination[key]
         else:
-            raise ValueError("Conflict at %s" % ".".join(path + [str(key)]))
+            raise ValueError(f"Conflict at {'.'.join(path + [str(key)])}")
 
 
 def merge_both_values(value1: Any, value2: Any) -> List[Any]:

@@ -69,7 +69,7 @@ def test_convert_model_to_model_object_type_without_name(setup_registry):
 
 
 def test_convert_model_to_model_object_type_without_field_converter_function(
-    setup_registry
+    setup_registry,
 ):
     with pytest.raises(ValueError) as exc_info:
         convert_model_to_model_object_type(
@@ -82,7 +82,7 @@ def test_convert_model_to_model_object_type_without_field_converter_function(
 
 
 def test_convert_model_to_model_object_type_with_field_converter_function_not_callable(
-    setup_registry
+    setup_registry,
 ):
     with pytest.raises(ValueError) as exc_info:
         convert_model_to_model_object_type(
@@ -152,7 +152,7 @@ def test_convert_model_to_model_paginated_object_type_without_registry(setup_reg
 
 
 def test_convert_model_to_model_paginated_object_type_without_pascal_case_name(
-    setup_registry
+    setup_registry,
 ):
     registry = mock_registry
     model_object_type = convert_model_to_model_object_type(
@@ -174,7 +174,7 @@ def test_convert_model_to_model_paginated_object_type_without_pascal_case_name(
 
 
 def test_convert_model_to_model_paginated_object_type_without_model_object_type(
-    setup_registry
+    setup_registry,
 ):
     pascal_case_name = "TestModel"
     registry = mock_registry
@@ -203,7 +203,7 @@ def test_convert_model_to_model_mutate_input_object_type(setup_registry):
     registry = mock_registry
 
     def field_converter_function(name, field_type, model, registry):
-        if field_type == str:
+        if field_type is str:
             return graphene.String()
         else:
             return graphene.Int()
@@ -243,7 +243,7 @@ def test_convert_model_to_model_mutate_input_object_type_without_model(setup_reg
 
 
 def test_convert_model_to_model_mutate_input_object_type_without_pascal_case_name(
-    setup_registry
+    setup_registry,
 ):
     with pytest.raises(ValueError) as exc_info:
         convert_model_to_model_mutate_input_object_type(
@@ -263,7 +263,7 @@ def test_convert_model_to_model_mutate_input_object_type_without_pascal_case_nam
 
 
 def test_convert_model_to_model_mutate_input_object_type_without_registry(
-    setup_registry
+    setup_registry,
 ):
     input_object_type = convert_model_to_model_mutate_input_object_type(
         model=Model,
@@ -279,7 +279,7 @@ def test_convert_model_to_model_mutate_input_object_type_without_registry(
 
 
 def test_convert_model_to_model_mutate_input_object_type_without_field_converter_function(
-    setup_registry
+    setup_registry,
 ):
     with pytest.raises(ValueError) as exc_info:
         convert_model_to_model_mutate_input_object_type(
@@ -299,7 +299,7 @@ def test_convert_model_to_model_mutate_input_object_type_without_field_converter
 
 
 def test_convert_model_to_model_mutate_input_object_type_with_field_converter_function_not_callable(
-    setup_registry
+    setup_registry,
 ):
     with pytest.raises(ValueError) as exc_info:
         convert_model_to_model_mutate_input_object_type(
@@ -328,7 +328,7 @@ def test_convert_model_to_model_filter_input_object_type(setup_registry):
     registry = mock_registry
 
     def field_converter_function(name, field_type, model, registry):
-        if field_type == str:
+        if field_type is str:
             return graphene.String()
         else:
             return graphene.Int()
@@ -374,7 +374,7 @@ def test_convert_model_to_model_order_by_input_object_type(setup_registry):
     registry = mock_registry
 
     def field_converter_function(name, field_type, model, registry):
-        if field_type == str:
+        if field_type is str:
             return graphene.String()
         else:
             return graphene.Int()
