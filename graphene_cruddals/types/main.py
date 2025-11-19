@@ -150,7 +150,7 @@ class ModelObjectType(graphene.ObjectType):
         registry.register_model(model, "object_type", cls)
 
     @classmethod
-    def get_objects(cls, objects, info):
+    def get_objects(cls, objects, info, **args):
         return objects
 
 
