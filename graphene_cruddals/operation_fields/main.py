@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from typing import Any, Callable, Dict, Literal, Type, Union
+from typing import Any, Callable, Dict, Literal, Optional, Type, Union
 
 import graphene
 from graphene.types.generic import GenericScalar
@@ -65,6 +65,58 @@ class PaginationConfigInput(graphene.InputObjectType):
     items_per_page = graphene.InputField(IntOrAll, default_value="All")  # type: ignore
 
 
+def build_argument_from_modification(
+    modify_config: Optional[Dict[str, Any]],
+    default_type: Any,
+    default_name: str,
+    default_required: bool = True,
+    default_description: Optional[str] = None,
+    default_default_value: Any = None,
+    default_deprecation_reason: Optional[str] = None,
+) -> Optional[graphene.Argument]:
+    """
+    Builds a graphene.Argument from a modification configuration.
+
+    Args:
+        modify_config: Dictionary with argument modifications (can be None)
+        default_type: Default GraphQL type of the argument
+        default_name: Default name of the argument
+        default_required: Whether the argument is required by default
+        default_description: Default description of the argument
+        default_default_value: Default value of the argument
+        default_deprecation_reason: Default deprecation reason
+
+    Returns:
+        Configured graphene.Argument or None if modify_config is None or hidden=True
+    """
+    if not modify_config:
+        # If no configuration, create argument with default values
+        return graphene.Argument(
+            type_=default_type,
+            default_value=default_default_value,
+            deprecation_reason=default_deprecation_reason,
+            description=default_description,
+            name=default_name,
+            required=default_required,
+        )
+
+    # If hidden, return None
+    if modify_config.get("hidden", False):
+        return None
+
+    # Build argument with modification values or defaults
+    return graphene.Argument(
+        type_=modify_config.get("type_", default_type),
+        default_value=modify_config.get("default_value", default_default_value),
+        deprecation_reason=modify_config.get(
+            "deprecation_reason", default_deprecation_reason
+        ),
+        description=modify_config.get("description", default_description),
+        name=modify_config.get("name", default_name),
+        required=modify_config.get("required", default_required),
+    )
+
+
 class ModelCreateUpdateField(graphene.Field):
     def __init__(
         self,
@@ -73,6 +125,7 @@ class ModelCreateUpdateField(graphene.Field):
         model: Type,
         registry: RegistryGlobal,
         resolver: Union[Callable[..., Any], None] = None,
+        modify_input_argument: Optional[Dict[str, Any]] = None,
         **extra_args,
     ):
         type_registry = (
@@ -87,12 +140,21 @@ class ModelCreateUpdateField(graphene.Field):
 
         model_as_input_object_type = get_converted_model(model, registry, type_registry)
 
-        args = {
-            "input": graphene.Argument(
-                graphene.List(graphene.NonNull(model_as_input_object_type)),
-                required=True,
-            )
-        }
+        args = {}
+        default_type = graphene.List(graphene.NonNull(model_as_input_object_type))
+        default_name = "input"
+        default_required = True
+
+        # Process input argument modification
+        input_arg = build_argument_from_modification(
+            modify_config=modify_input_argument,
+            default_type=default_type,
+            default_name=default_name,
+            default_required=default_required,
+        )
+
+        if input_arg:
+            args[input_arg.name] = input_arg
 
         payload_type = get_object_type_payload(
             model=model,
@@ -125,6 +187,7 @@ class ModelReadField(graphene.Field):
         model: Type,
         registry: RegistryGlobal,
         resolver: Union[Callable[..., Any], None] = None,
+        modify_where_argument: Optional[Dict[str, Any]] = None,
         **extra_args,
     ):
         if not exists_conversion_for_model(
@@ -141,11 +204,22 @@ class ModelReadField(graphene.Field):
             model, registry, TypeRegistryForModelEnum.INPUT_OBJECT_TYPE_FOR_SEARCH.value
         )
 
-        args = {
-            "where": graphene.Argument(
-                model_as_search_input_object_type, required=True
-            ),
-        }
+        args = {}
+        default_type = model_as_search_input_object_type
+        default_name = "where"
+        default_required = True
+
+        # Process where argument modification
+        where_arg = build_argument_from_modification(
+            modify_config=modify_where_argument,
+            default_type=default_type,
+            default_name=default_name,
+            default_required=default_required,
+        )
+
+        if where_arg:
+            args[where_arg.name] = where_arg
+
         super().__init__(
             model_object_type,
             name=f"read{singular_model_name}",
@@ -169,6 +243,7 @@ class ModelDeleteField(graphene.Field):
         model: Type,
         registry: RegistryGlobal,
         resolver: Union[Callable[..., Any], None] = None,
+        modify_where_argument: Optional[Dict[str, Any]] = None,
         **extra_args,
     ):
         if not exists_conversion_for_model(
@@ -182,11 +257,21 @@ class ModelDeleteField(graphene.Field):
             model, registry, TypeRegistryForModelEnum.INPUT_OBJECT_TYPE_FOR_SEARCH.value
         )
 
-        args = {
-            "where": graphene.Argument(
-                model_as_search_input_object_type, required=True
-            ),
-        }
+        args = {}
+        default_type = model_as_search_input_object_type
+        default_name = "where"
+        default_required = True
+
+        # Process where argument modification
+        where_arg = build_argument_from_modification(
+            modify_config=modify_where_argument,
+            default_type=default_type,
+            default_name=default_name,
+            default_required=default_required,
+        )
+
+        if where_arg:
+            args[where_arg.name] = where_arg
 
         payload_type = get_object_type_payload(
             model=model,
@@ -220,6 +305,7 @@ class ModelDeactivateField(graphene.Field):
         registry: RegistryGlobal,
         state_controller_field: Union[str, None] = None,
         resolver: Union[Callable[..., Any], None] = None,
+        modify_where_argument: Optional[Dict[str, Any]] = None,
         **extra_args,
     ):
         if not exists_conversion_for_model(
@@ -233,11 +319,21 @@ class ModelDeactivateField(graphene.Field):
             model, registry, TypeRegistryForModelEnum.INPUT_OBJECT_TYPE_FOR_SEARCH.value
         )
 
-        args = {
-            "where": graphene.Argument(
-                model_as_search_input_object_type, required=True
-            ),
-        }
+        args = {}
+        default_type = model_as_search_input_object_type
+        default_name = "where"
+        default_required = True
+
+        # Process where argument modification
+        where_arg = build_argument_from_modification(
+            modify_config=modify_where_argument,
+            default_type=default_type,
+            default_name=default_name,
+            default_required=default_required,
+        )
+
+        if where_arg:
+            args[where_arg.name] = where_arg
 
         payload_type = get_object_type_payload(
             model=model,
@@ -270,6 +366,7 @@ class ModelActivateField(graphene.Field):
         registry: RegistryGlobal,
         state_controller_field: Union[str, None] = None,
         resolver: Union[Callable[..., Any], None] = None,
+        modify_where_argument: Optional[Dict[str, Any]] = None,
         **extra_args,
     ):
         if not exists_conversion_for_model(
@@ -283,11 +380,21 @@ class ModelActivateField(graphene.Field):
             model, registry, TypeRegistryForModelEnum.INPUT_OBJECT_TYPE_FOR_SEARCH.value
         )
 
-        args = {
-            "where": graphene.Argument(
-                model_as_search_input_object_type, required=True
-            ),
-        }
+        args = {}
+        default_type = model_as_search_input_object_type
+        default_name = "where"
+        default_required = True
+
+        # Process where argument modification
+        where_arg = build_argument_from_modification(
+            modify_config=modify_where_argument,
+            default_type=default_type,
+            default_name=default_name,
+            default_required=default_required,
+        )
+
+        if where_arg:
+            args[where_arg.name] = where_arg
 
         payload_type = get_object_type_payload(
             model=model,
@@ -349,6 +456,9 @@ class ModelSearchField(graphene.Field):
         model: Type,
         registry: RegistryGlobal,
         resolver: Union[Callable[..., Any], None] = None,
+        modify_where_argument: Optional[Dict[str, Any]] = None,
+        modify_order_by_argument: Optional[Dict[str, Any]] = None,
+        modify_pagination_config_argument: Optional[Dict[str, Any]] = None,
         **extra_args,
     ):
         if not exists_conversion_for_model(
@@ -386,15 +496,37 @@ class ModelSearchField(graphene.Field):
             TypeRegistryForModelEnum.INPUT_OBJECT_TYPE_FOR_ORDER_BY.value,
         )
 
-        args = {
-            "where": graphene.Argument(model_as_search_input_object_type),
-            "order_by": graphene.Argument(
-                model_as_order_by_input_object_type, name="orderBy"
-            ),
-            "pagination_config": graphene.Argument(
-                PaginationConfigInput, name="paginationConfig"
-            ),
-        }
+        args = {}
+
+        # Process where argument
+        where_arg = build_argument_from_modification(
+            modify_config=modify_where_argument,
+            default_type=model_as_search_input_object_type,
+            default_name="where",
+            default_required=False,
+        )
+        if where_arg:
+            args[where_arg.name] = where_arg
+
+        # Process orderBy argument
+        order_by_arg = build_argument_from_modification(
+            modify_config=modify_order_by_argument,
+            default_type=model_as_order_by_input_object_type,
+            default_name="order_by",
+            default_required=False,
+        )
+        if order_by_arg:
+            args[order_by_arg.name] = order_by_arg
+
+        # Process paginationConfig argument
+        pagination_arg = build_argument_from_modification(
+            modify_config=modify_pagination_config_argument,
+            default_type=PaginationConfigInput,
+            default_name="pagination_config",
+            default_required=False,
+        )
+        if pagination_arg:
+            args[pagination_arg.name] = pagination_arg
 
         name = (
             f"search{plural_model_name}"

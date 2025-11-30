@@ -56,11 +56,13 @@ GRAPHENE_TYPE_TUPLE = (
 )
 
 
-class ModifyArgument(TypedDict):
+class ModifyArgument(TypedDict, total=False):
     type_: Union[Any, None]
     name: Union[str, None]
     required: Union[bool, None]
     description: Union[str, None]
+    default_value: Union[Any, None]
+    deprecation_reason: Union[str, None]
     hidden: Union[bool, None]
 
 

@@ -12,6 +12,7 @@ from graphene_cruddals.operation_fields.main import (
     ModelReadField,
     ModelSearchField,
     PaginationConfigInput,
+    build_argument_from_modification,
     get_object_type_payload,
 )
 from graphene_cruddals.registry.registry_global import (
@@ -963,3 +964,349 @@ class TestModelSearchField:
             "The model does not have a ModelOrderByInputObjectType registered and it is required for the search operation"
             in str(exc_info.value)
         )
+
+
+class TestBuildArgumentFromModification:
+    def test_build_argument_without_config(self):
+        """Test that build_argument_from_modification creates argument with defaults when config is None"""
+        arg = build_argument_from_modification(
+            modify_config=None,
+            default_type=graphene.String,
+            default_name="test_arg",
+            default_required=True,
+            default_description="Test description",
+        )
+
+        assert arg is not None
+        assert arg.name == "test_arg"
+        assert isinstance(arg.type, graphene.NonNull)
+        assert arg.description == "Test description"
+
+    def test_build_argument_with_hidden_true(self):
+        """Test that build_argument_from_modification returns None when hidden=True"""
+        arg = build_argument_from_modification(
+            modify_config={"hidden": True},
+            default_type=graphene.String,
+            default_name="test_arg",
+        )
+
+        assert arg is None
+
+    def test_build_argument_modify_required(self):
+        """Test modifying the required property"""
+        arg = build_argument_from_modification(
+            modify_config={"required": False},
+            default_type=graphene.String,
+            default_name="test_arg",
+            default_required=True,
+        )
+
+        assert arg is not None
+        assert not isinstance(arg.type, graphene.NonNull)
+
+    def test_build_argument_modify_name(self):
+        """Test modifying the name property"""
+        arg = build_argument_from_modification(
+            modify_config={"name": "new_name"},
+            default_type=graphene.String,
+            default_name="test_arg",
+        )
+
+        assert arg is not None
+        assert arg.name == "new_name"
+
+    def test_build_argument_modify_description(self):
+        """Test modifying the description property"""
+        arg = build_argument_from_modification(
+            modify_config={"description": "New description"},
+            default_type=graphene.String,
+            default_name="test_arg",
+            default_description="Old description",
+        )
+
+        assert arg is not None
+        assert arg.description == "New description"
+
+    def test_build_argument_modify_all_properties(self):
+        """Test modifying multiple properties at once"""
+        arg = build_argument_from_modification(
+            modify_config={
+                "name": "custom_arg",
+                "required": False,
+                "description": "Custom description",
+                "default_value": "default",
+                "deprecation_reason": "Deprecated",
+            },
+            default_type=graphene.String,
+            default_name="test_arg",
+            default_required=True,
+        )
+
+        assert arg is not None
+        assert arg.name == "custom_arg"
+        assert not isinstance(arg.type, graphene.NonNull)
+        assert arg.description == "Custom description"
+        assert arg.default_value == "default"
+        assert arg.deprecation_reason == "Deprecated"
+
+
+class TestModelCreateUpdateFieldArgumentModification:
+    def test_modify_input_argument_required_false(self, registry):
+        """Test making the input argument optional"""
+        field = ModelCreateUpdateField(
+            plural_model_name="Tests",
+            type_operation="Create",
+            model=MockModelOperationFields,
+            registry=registry,
+            modify_input_argument={"required": False},
+        )
+
+        assert "input" in field.args
+        # When required=False, the type should not be wrapped in NonNull
+        # The input is a List, so we check if the List itself is not NonNull
+        assert not isinstance(field.args["input"].type, graphene.NonNull)
+
+    def test_modify_input_argument_name(self, registry):
+        """Test changing the name of the input argument"""
+        field = ModelCreateUpdateField(
+            plural_model_name="Tests",
+            type_operation="Create",
+            model=MockModelOperationFields,
+            registry=registry,
+            modify_input_argument={"name": "data"},
+        )
+
+        assert "data" in field.args
+        assert "input" not in field.args
+        assert field.args["data"].name == "data"
+
+    def test_modify_input_argument_description(self, registry):
+        """Test adding description to input argument"""
+        field = ModelCreateUpdateField(
+            plural_model_name="Tests",
+            type_operation="Create",
+            model=MockModelOperationFields,
+            registry=registry,
+            modify_input_argument={"description": "Input data for creation"},
+        )
+
+        assert "input" in field.args
+        assert field.args["input"].description == "Input data for creation"
+
+    def test_modify_input_argument_hidden(self, registry):
+        """Test hiding the input argument"""
+        field = ModelCreateUpdateField(
+            plural_model_name="Tests",
+            type_operation="Create",
+            model=MockModelOperationFields,
+            registry=registry,
+            modify_input_argument={"hidden": True},
+        )
+
+        assert "input" not in field.args
+        assert len(field.args) == 0
+
+    def test_modify_input_argument_with_extra_arguments(self, registry):
+        """Test combining modify_input_argument with extra_arguments"""
+        field = ModelCreateUpdateField(
+            plural_model_name="Tests",
+            type_operation="Create",
+            model=MockModelOperationFields,
+            registry=registry,
+            modify_input_argument={"description": "Custom input"},
+            **{"extra": graphene.Argument(graphene.String, name="extra")},
+        )
+
+        assert "input" in field.args
+        assert "extra" in field.args
+        assert field.args["input"].description == "Custom input"
+
+
+class TestModelReadFieldArgumentModification:
+    def test_modify_where_argument_required_false(self, registry):
+        """Test making the where argument optional"""
+        field = ModelReadField(
+            singular_model_name="Test",
+            model=MockModelOperationFields,
+            registry=registry,
+            modify_where_argument={"required": False},
+        )
+
+        assert "where" in field.args
+        assert not isinstance(field.args["where"].type, graphene.NonNull)
+
+    def test_modify_where_argument_name(self, registry):
+        """Test changing the name of the where argument"""
+        field = ModelReadField(
+            singular_model_name="Test",
+            model=MockModelOperationFields,
+            registry=registry,
+            modify_where_argument={"name": "filter"},
+        )
+
+        assert "filter" in field.args
+        assert "where" not in field.args
+        assert field.args["filter"].name == "filter"
+
+    def test_modify_where_argument_hidden(self, registry):
+        """Test hiding the where argument"""
+        field = ModelReadField(
+            singular_model_name="Test",
+            model=MockModelOperationFields,
+            registry=registry,
+            modify_where_argument={"hidden": True},
+        )
+
+        assert "where" not in field.args
+        assert len(field.args) == 0
+
+
+class TestModelDeleteFieldArgumentModification:
+    def test_modify_where_argument_required_false(self, registry):
+        """Test making the where argument optional in delete field"""
+        field = ModelDeleteField(
+            plural_model_name="Tests",
+            model=MockModelOperationFields,
+            registry=registry,
+            modify_where_argument={"required": False},
+        )
+
+        assert "where" in field.args
+        assert not isinstance(field.args["where"].type, graphene.NonNull)
+
+    def test_modify_where_argument_name(self, registry):
+        """Test changing the name of the where argument in delete field"""
+        field = ModelDeleteField(
+            plural_model_name="Tests",
+            model=MockModelOperationFields,
+            registry=registry,
+            modify_where_argument={"name": "filter"},
+        )
+
+        assert "filter" in field.args
+        assert "where" not in field.args
+
+
+class TestModelDeactivateFieldArgumentModification:
+    def test_modify_where_argument_required_false(self, registry):
+        """Test making the where argument optional in deactivate field"""
+        field = ModelDeactivateField(
+            plural_model_name="Tests",
+            model=MockModelOperationFields,
+            registry=registry,
+            modify_where_argument={"required": False},
+        )
+
+        assert "where" in field.args
+        assert not isinstance(field.args["where"].type, graphene.NonNull)
+
+
+class TestModelActivateFieldArgumentModification:
+    def test_modify_where_argument_required_false(self, registry):
+        """Test making the where argument optional in activate field"""
+        field = ModelActivateField(
+            plural_model_name="Tests",
+            model=MockModelOperationFields,
+            registry=registry,
+            modify_where_argument={"required": False},
+        )
+
+        assert "where" in field.args
+        assert not isinstance(field.args["where"].type, graphene.NonNull)
+
+
+class TestModelSearchFieldArgumentModification:
+    def test_modify_where_argument(self, registry):
+        """Test modifying the where argument in search field"""
+        field = ModelSearchField(
+            plural_model_name="Tests",
+            model=MockModelOperationFields,
+            registry=registry,
+            modify_where_argument={
+                "required": True,
+                "description": "Filter conditions",
+            },
+        )
+
+        assert "where" in field.args
+        assert isinstance(field.args["where"].type, graphene.NonNull)
+        assert field.args["where"].description == "Filter conditions"
+
+    def test_modify_order_by_argument(self, registry):
+        """Test modifying the order_by argument in search field"""
+        field = ModelSearchField(
+            plural_model_name="Tests",
+            model=MockModelOperationFields,
+            registry=registry,
+            modify_order_by_argument={
+                "name": "sortBy",
+                "description": "Sorting options",
+            },
+        )
+
+        assert "sortBy" in field.args
+        assert "order_by" not in field.args
+        assert field.args["sortBy"].description == "Sorting options"
+
+    def test_modify_pagination_config_argument(self, registry):
+        """Test modifying the pagination_config argument in search field"""
+        field = ModelSearchField(
+            plural_model_name="Tests",
+            model=MockModelOperationFields,
+            registry=registry,
+            modify_pagination_config_argument={"name": "pagination", "required": True},
+        )
+
+        assert "pagination" in field.args
+        assert "pagination_config" not in field.args
+        assert isinstance(field.args["pagination"].type, graphene.NonNull)
+
+    def test_modify_all_search_arguments(self, registry):
+        """Test modifying all arguments in search field"""
+        field = ModelSearchField(
+            plural_model_name="Tests",
+            model=MockModelOperationFields,
+            registry=registry,
+            modify_where_argument={"description": "Where clause"},
+            modify_order_by_argument={"description": "Order by clause"},
+            modify_pagination_config_argument={"description": "Pagination config"},
+        )
+
+        assert "where" in field.args
+        assert "order_by" in field.args
+        assert "pagination_config" in field.args
+        assert field.args["where"].description == "Where clause"
+        assert field.args["order_by"].description == "Order by clause"
+        assert field.args["pagination_config"].description == "Pagination config"
+
+    def test_hide_search_arguments(self, registry):
+        """Test hiding arguments in search field"""
+        field = ModelSearchField(
+            plural_model_name="Tests",
+            model=MockModelOperationFields,
+            registry=registry,
+            modify_where_argument={"hidden": True},
+            modify_order_by_argument={"hidden": True},
+            modify_pagination_config_argument={"hidden": True},
+        )
+
+        assert "where" not in field.args
+        assert "order_by" not in field.args
+        assert "pagination_config" not in field.args
+        assert len(field.args) == 0
+
+    def test_modify_search_arguments_with_extra_arguments(self, registry):
+        """Test combining modify arguments with extra_arguments in search field"""
+        field = ModelSearchField(
+            plural_model_name="Tests",
+            model=MockModelOperationFields,
+            registry=registry,
+            modify_where_argument={"description": "Custom where"},
+            **{"extra": graphene.Argument(graphene.String, name="extra")},
+        )
+
+        assert "where" in field.args
+        assert "order_by" in field.args
+        assert "pagination_config" in field.args
+        assert "extra" in field.args
+        assert field.args["where"].description == "Custom where"

@@ -765,13 +765,15 @@ class BuilderCruddalsModel(BaseCruddals):
     def _build_create_field(
         self, config: CruddalsBuilderConfig, dict_of_internal_interface_attr
     ) -> ModelCreateUpdateField:
-        extra_arguments = dict_of_internal_interface_attr.get(
-            CruddalsInternalInterfaceNames.CREATE_FIELD.value, {}
-        ).pop("extra_arguments", {})
-        name_function = "mutate"
-        extra_pre_post_resolvers = dict_of_internal_interface_attr.get(
+        field_attrs = dict_of_internal_interface_attr.get(
             CruddalsInternalInterfaceNames.CREATE_FIELD.value, {}
         )
+
+        extra_arguments = field_attrs.pop("extra_arguments", {})
+        modify_input_argument = field_attrs.pop("modify_input_argument", None)
+
+        name_function = "mutate"
+        extra_pre_post_resolvers = field_attrs
         resolver = self.wrap_resolver_with_pre_post_resolvers(
             config.create_resolver, extra_pre_post_resolvers, name_function
         )
@@ -782,19 +784,22 @@ class BuilderCruddalsModel(BaseCruddals):
             model=self.model,
             registry=self.registry,
             resolver=resolver,
+            modify_input_argument=modify_input_argument,
             **extra_arguments,
         )
 
     def _build_read_field(
         self, config: CruddalsBuilderConfig, dict_of_internal_interface_attr
     ) -> ModelReadField:
-        extra_arguments = dict_of_internal_interface_attr.get(
-            CruddalsInternalInterfaceNames.READ_FIELD.value, {}
-        ).pop("extra_arguments", {})
-        name_function = "resolver"
-        extra_pre_post_resolvers = dict_of_internal_interface_attr.get(
+        field_attrs = dict_of_internal_interface_attr.get(
             CruddalsInternalInterfaceNames.READ_FIELD.value, {}
         )
+
+        extra_arguments = field_attrs.pop("extra_arguments", {})
+        modify_where_argument = field_attrs.pop("modify_where_argument", None)
+
+        name_function = "resolver"
+        extra_pre_post_resolvers = field_attrs
         resolver = self.wrap_resolver_with_pre_post_resolvers(
             config.read_resolver, extra_pre_post_resolvers, name_function
         )
@@ -804,19 +809,22 @@ class BuilderCruddalsModel(BaseCruddals):
             model=self.model,
             registry=self.registry,
             resolver=resolver,
+            modify_where_argument=modify_where_argument,
             **extra_arguments,
         )
 
     def _build_update_field(
         self, config: CruddalsBuilderConfig, dict_of_internal_interface_attr
     ) -> ModelCreateUpdateField:
-        extra_arguments = dict_of_internal_interface_attr.get(
-            CruddalsInternalInterfaceNames.UPDATE_FIELD.value, {}
-        ).pop("extra_arguments", {})
-        name_function = "mutate"
-        extra_pre_post_resolvers = dict_of_internal_interface_attr.get(
+        field_attrs = dict_of_internal_interface_attr.get(
             CruddalsInternalInterfaceNames.UPDATE_FIELD.value, {}
         )
+
+        extra_arguments = field_attrs.pop("extra_arguments", {})
+        modify_input_argument = field_attrs.pop("modify_input_argument", None)
+
+        name_function = "mutate"
+        extra_pre_post_resolvers = field_attrs
         resolver = self.wrap_resolver_with_pre_post_resolvers(
             config.update_resolver, extra_pre_post_resolvers, name_function
         )
@@ -826,19 +834,22 @@ class BuilderCruddalsModel(BaseCruddals):
             model=self.model,
             registry=self.registry,
             resolver=resolver,
+            modify_input_argument=modify_input_argument,
             **extra_arguments,
         )
 
     def _build_delete_field(
         self, config: CruddalsBuilderConfig, dict_of_internal_interface_attr
     ) -> ModelDeleteField:
-        extra_arguments = dict_of_internal_interface_attr.get(
-            CruddalsInternalInterfaceNames.DELETE_FIELD.value, {}
-        ).pop("extra_arguments", {})
-        name_function = "mutate"
-        extra_pre_post_resolvers = dict_of_internal_interface_attr.get(
+        field_attrs = dict_of_internal_interface_attr.get(
             CruddalsInternalInterfaceNames.DELETE_FIELD.value, {}
         )
+
+        extra_arguments = field_attrs.pop("extra_arguments", {})
+        modify_where_argument = field_attrs.pop("modify_where_argument", None)
+
+        name_function = "mutate"
+        extra_pre_post_resolvers = field_attrs
         resolver = self.wrap_resolver_with_pre_post_resolvers(
             config.delete_resolver, extra_pre_post_resolvers, name_function
         )
@@ -847,19 +858,22 @@ class BuilderCruddalsModel(BaseCruddals):
             model=self.model,
             registry=self.registry,
             resolver=resolver,
+            modify_where_argument=modify_where_argument,
             **extra_arguments,
         )
 
     def _build_deactivate_field(
         self, config: CruddalsBuilderConfig, dict_of_internal_interface_attr
     ) -> ModelDeactivateField:
-        extra_arguments = dict_of_internal_interface_attr.get(
-            CruddalsInternalInterfaceNames.DEACTIVATE_FIELD.value, {}
-        ).pop("extra_arguments", {})
-        name_function = "mutate"
-        extra_pre_post_resolvers = dict_of_internal_interface_attr.get(
+        field_attrs = dict_of_internal_interface_attr.get(
             CruddalsInternalInterfaceNames.DEACTIVATE_FIELD.value, {}
         )
+
+        extra_arguments = field_attrs.pop("extra_arguments", {})
+        modify_where_argument = field_attrs.pop("modify_where_argument", None)
+
+        name_function = "mutate"
+        extra_pre_post_resolvers = field_attrs
         resolver = self.wrap_resolver_with_pre_post_resolvers(
             config.deactivate_resolver, extra_pre_post_resolvers, name_function
         )
@@ -869,19 +883,22 @@ class BuilderCruddalsModel(BaseCruddals):
             registry=self.registry,
             state_controller_field=config.field_for_activate_deactivate,
             resolver=resolver,
+            modify_where_argument=modify_where_argument,
             **extra_arguments,
         )
 
     def _build_activate_field(
         self, config: CruddalsBuilderConfig, dict_of_internal_interface_attr
     ) -> ModelActivateField:
-        extra_arguments = dict_of_internal_interface_attr.get(
-            CruddalsInternalInterfaceNames.ACTIVATE_FIELD.value, {}
-        ).pop("extra_arguments", {})
-        name_function = "mutate"
-        extra_pre_post_resolvers = dict_of_internal_interface_attr.get(
+        field_attrs = dict_of_internal_interface_attr.get(
             CruddalsInternalInterfaceNames.ACTIVATE_FIELD.value, {}
         )
+
+        extra_arguments = field_attrs.pop("extra_arguments", {})
+        modify_where_argument = field_attrs.pop("modify_where_argument", None)
+
+        name_function = "mutate"
+        extra_pre_post_resolvers = field_attrs
         resolver = self.wrap_resolver_with_pre_post_resolvers(
             config.activate_resolver, extra_pre_post_resolvers, name_function
         )
@@ -891,6 +908,7 @@ class BuilderCruddalsModel(BaseCruddals):
             registry=self.registry,
             state_controller_field=config.field_for_activate_deactivate,
             resolver=resolver,
+            modify_where_argument=modify_where_argument,
             **extra_arguments,
         )
 
@@ -918,13 +936,19 @@ class BuilderCruddalsModel(BaseCruddals):
     def _build_search_field(
         self, config: CruddalsBuilderConfig, dict_of_internal_interface_attr
     ) -> ModelSearchField:
-        extra_arguments = dict_of_internal_interface_attr.get(
-            CruddalsInternalInterfaceNames.SEARCH_FIELD.value, {}
-        ).pop("extra_arguments", {})
-        name_function = "resolver"
-        extra_pre_post_resolvers = dict_of_internal_interface_attr.get(
+        field_attrs = dict_of_internal_interface_attr.get(
             CruddalsInternalInterfaceNames.SEARCH_FIELD.value, {}
         )
+
+        extra_arguments = field_attrs.pop("extra_arguments", {})
+        modify_where_argument = field_attrs.pop("modify_where_argument", None)
+        modify_order_by_argument = field_attrs.pop("modify_order_by_argument", None)
+        modify_pagination_config_argument = field_attrs.pop(
+            "modify_pagination_config_argument", None
+        )
+
+        name_function = "resolver"
+        extra_pre_post_resolvers = field_attrs
         resolver = self.wrap_resolver_with_pre_post_resolvers(
             config.search_resolver, extra_pre_post_resolvers, name_function
         )
@@ -933,6 +957,9 @@ class BuilderCruddalsModel(BaseCruddals):
             model=self.model,
             registry=self.registry,
             resolver=resolver,
+            modify_where_argument=modify_where_argument,
+            modify_order_by_argument=modify_order_by_argument,
+            modify_pagination_config_argument=modify_pagination_config_argument,
             **extra_arguments,
         )
 
