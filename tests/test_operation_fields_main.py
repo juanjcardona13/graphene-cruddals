@@ -1,3 +1,5 @@
+import inspect
+
 import pytest
 
 import graphene
@@ -1047,7 +1049,11 @@ class TestBuildArgumentFromModification:
         assert not isinstance(arg.type, graphene.NonNull)
         assert arg.description == "Custom description"
         assert arg.default_value == "default"
-        assert arg.deprecation_reason == "Deprecated"
+        if (
+            "deprecation_reason"
+            in inspect.signature(graphene.Argument.__init__).parameters
+        ):
+            assert arg.deprecation_reason == "Deprecated"
 
 
 class TestModelCreateUpdateFieldArgumentModification:

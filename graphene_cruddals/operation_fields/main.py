@@ -1,3 +1,4 @@
+import inspect
 from collections import OrderedDict
 from typing import Any, Callable, Dict, Literal, Optional, Type, Union
 
@@ -12,6 +13,10 @@ from graphene_cruddals.utils.main import (
 )
 from graphene_cruddals.utils.typing.custom_typing import (
     TypeRegistryForModelEnum,
+)
+
+_ARGUMENT_SUPPORTS_DEPRECATION = (
+    "deprecation_reason" in inspect.signature(graphene.Argument.__init__).parameters
 )
 
 
@@ -90,31 +95,33 @@ def build_argument_from_modification(
         Configured graphene.Argument or None if modify_config is None or hidden=True
     """
     if not modify_config:
-        # If no configuration, create argument with default values
-        return graphene.Argument(
-            type_=default_type,
-            default_value=default_default_value,
-            deprecation_reason=default_deprecation_reason,
-            description=default_description,
-            name=default_name,
-            required=default_required,
-        )
+        kwargs = {
+            "type_": default_type,
+            "default_value": default_default_value,
+            "description": default_description,
+            "name": default_name,
+            "required": default_required,
+        }
+        if default_deprecation_reason is not None and _ARGUMENT_SUPPORTS_DEPRECATION:
+            kwargs["deprecation_reason"] = default_deprecation_reason
+        return graphene.Argument(**kwargs)
 
-    # If hidden, return None
     if modify_config.get("hidden", False):
         return None
 
-    # Build argument with modification values or defaults
-    return graphene.Argument(
-        type_=modify_config.get("type_", default_type),
-        default_value=modify_config.get("default_value", default_default_value),
-        deprecation_reason=modify_config.get(
-            "deprecation_reason", default_deprecation_reason
-        ),
-        description=modify_config.get("description", default_description),
-        name=modify_config.get("name", default_name),
-        required=modify_config.get("required", default_required),
+    kwargs = {
+        "type_": modify_config.get("type_", default_type),
+        "default_value": modify_config.get("default_value", default_default_value),
+        "description": modify_config.get("description", default_description),
+        "name": modify_config.get("name", default_name),
+        "required": modify_config.get("required", default_required),
+    }
+    deprecation_reason = modify_config.get(
+        "deprecation_reason", default_deprecation_reason
     )
+    if deprecation_reason is not None and _ARGUMENT_SUPPORTS_DEPRECATION:
+        kwargs["deprecation_reason"] = deprecation_reason
+    return graphene.Argument(**kwargs)
 
 
 class ModelCreateUpdateField(graphene.Field):
@@ -145,7 +152,6 @@ class ModelCreateUpdateField(graphene.Field):
         default_name = "input"
         default_required = True
 
-        # Process input argument modification
         input_arg = build_argument_from_modification(
             modify_config=modify_input_argument,
             default_type=default_type,
@@ -209,7 +215,6 @@ class ModelReadField(graphene.Field):
         default_name = "where"
         default_required = True
 
-        # Process where argument modification
         where_arg = build_argument_from_modification(
             modify_config=modify_where_argument,
             default_type=default_type,
@@ -262,7 +267,6 @@ class ModelDeleteField(graphene.Field):
         default_name = "where"
         default_required = True
 
-        # Process where argument modification
         where_arg = build_argument_from_modification(
             modify_config=modify_where_argument,
             default_type=default_type,
@@ -324,7 +328,6 @@ class ModelDeactivateField(graphene.Field):
         default_name = "where"
         default_required = True
 
-        # Process where argument modification
         where_arg = build_argument_from_modification(
             modify_config=modify_where_argument,
             default_type=default_type,
@@ -385,7 +388,6 @@ class ModelActivateField(graphene.Field):
         default_name = "where"
         default_required = True
 
-        # Process where argument modification
         where_arg = build_argument_from_modification(
             modify_config=modify_where_argument,
             default_type=default_type,
@@ -498,7 +500,6 @@ class ModelSearchField(graphene.Field):
 
         args = {}
 
-        # Process where argument
         where_arg = build_argument_from_modification(
             modify_config=modify_where_argument,
             default_type=model_as_search_input_object_type,
@@ -508,7 +509,6 @@ class ModelSearchField(graphene.Field):
         if where_arg:
             args[where_arg.name] = where_arg
 
-        # Process orderBy argument
         order_by_arg = build_argument_from_modification(
             modify_config=modify_order_by_argument,
             default_type=model_as_order_by_input_object_type,
@@ -518,7 +518,6 @@ class ModelSearchField(graphene.Field):
         if order_by_arg:
             args[order_by_arg.name] = order_by_arg
 
-        # Process paginationConfig argument
         pagination_arg = build_argument_from_modification(
             modify_config=modify_pagination_config_argument,
             default_type=PaginationConfigInput,
