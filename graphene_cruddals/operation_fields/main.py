@@ -2,6 +2,8 @@ import inspect
 from collections import OrderedDict
 from typing import Any, Callable, Dict, Literal, Optional, Type, Union
 
+from graphql import Undefined
+
 import graphene
 from graphene.types.generic import GenericScalar
 from graphene_cruddals.registry.registry_global import RegistryGlobal
@@ -76,7 +78,7 @@ def build_argument_from_modification(
     default_name: str,
     default_required: bool = True,
     default_description: Optional[str] = None,
-    default_default_value: Any = None,
+    default_default_value: Any = Undefined,
     default_deprecation_reason: Optional[str] = None,
 ) -> Optional[graphene.Argument]:
     """
@@ -512,7 +514,7 @@ class ModelSearchField(graphene.Field):
         order_by_arg = build_argument_from_modification(
             modify_config=modify_order_by_argument,
             default_type=model_as_order_by_input_object_type,
-            default_name="order_by",
+            default_name="orderBy",
             default_required=False,
         )
         if order_by_arg:
@@ -521,7 +523,7 @@ class ModelSearchField(graphene.Field):
         pagination_arg = build_argument_from_modification(
             modify_config=modify_pagination_config_argument,
             default_type=PaginationConfigInput,
-            default_name="pagination_config",
+            default_name="paginationConfig",
             default_required=False,
         )
         if pagination_arg:

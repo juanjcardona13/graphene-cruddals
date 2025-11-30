@@ -808,8 +808,8 @@ class TestModelSearchField:
         assert isinstance(search_field, graphene.Field)
         assert search_field.name == f"search{plural_model_name}"
         assert "where" in search_field.args
-        assert "order_by" in search_field.args
-        assert "pagination_config" in search_field.args
+        assert "orderBy" in search_field.args
+        assert "paginationConfig" in search_field.args
         assert "extra_arg" in search_field.args
         assert search_field.resolver == resolver
 
@@ -1251,7 +1251,7 @@ class TestModelSearchFieldArgumentModification:
         )
 
         assert "sortBy" in field.args
-        assert "order_by" not in field.args
+        assert "orderBy" not in field.args
         assert field.args["sortBy"].description == "Sorting options"
 
     def test_modify_pagination_config_argument(self, registry):
@@ -1279,11 +1279,11 @@ class TestModelSearchFieldArgumentModification:
         )
 
         assert "where" in field.args
-        assert "order_by" in field.args
-        assert "pagination_config" in field.args
+        assert "orderBy" in field.args
+        assert "paginationConfig" in field.args
         assert field.args["where"].description == "Where clause"
-        assert field.args["order_by"].description == "Order by clause"
-        assert field.args["pagination_config"].description == "Pagination config"
+        assert field.args["orderBy"].description == "Order by clause"
+        assert field.args["paginationConfig"].description == "Pagination config"
 
     def test_hide_search_arguments(self, registry):
         """Test hiding arguments in search field"""
@@ -1297,8 +1297,8 @@ class TestModelSearchFieldArgumentModification:
         )
 
         assert "where" not in field.args
-        assert "order_by" not in field.args
-        assert "pagination_config" not in field.args
+        assert "orderBy" not in field.args
+        assert "paginationConfig" not in field.args
         assert len(field.args) == 0
 
     def test_modify_search_arguments_with_extra_arguments(self, registry):
@@ -1312,7 +1312,7 @@ class TestModelSearchFieldArgumentModification:
         )
 
         assert "where" in field.args
-        assert "order_by" in field.args
-        assert "pagination_config" in field.args
+        assert "orderBy" in field.args
+        assert "paginationConfig" in field.args
         assert "extra" in field.args
         assert field.args["where"].description == "Custom where"
